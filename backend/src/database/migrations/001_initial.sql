@@ -167,7 +167,7 @@ $$;
 
 DO $$ BEGIN
   CREATE TRIGGER trg_ratings_role_guard
-    BEFORE INSERT ON ratings
+    BEFORE INSERT OR UPDATE ON ratings
     FOR EACH ROW EXECUTE FUNCTION fn_prevent_store_owner_rating();
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
