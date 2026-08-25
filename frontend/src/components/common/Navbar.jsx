@@ -31,7 +31,11 @@ const Navbar = () => {
           )}
 
           {isAuthenticated && user?.role === ROLES.SYSTEM_ADMIN && (
-            <Link to={ROUTES.ADMIN_DASHBOARD} className="nav-link">Dashboard</Link>
+            <>
+              <Link to={ROUTES.ADMIN_DASHBOARD} className="nav-link">Dashboard</Link>
+              <Link to={ROUTES.ADMIN_USERS} className="nav-link">Users</Link>
+              <Link to={ROUTES.ADMIN_STORES} className="nav-link">Stores</Link>
+            </>
           )}
 
           {isAuthenticated && user?.role === ROLES.NORMAL_USER && (

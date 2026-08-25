@@ -132,7 +132,7 @@ const AdminDashboard = () => {
             <div className="quick-action-card__icon">👤</div>
             <h3>User Management</h3>
             <p>View all users, filter by role or name, inspect user details, and add new users.</p>
-            <Link to="/admin/users" className="btn btn--outline btn--sm">
+            <Link to={ROUTES.ADMIN_USERS} className="btn btn--outline btn--sm">
               Manage Users →
             </Link>
           </div>
@@ -141,7 +141,7 @@ const AdminDashboard = () => {
             <div className="quick-action-card__icon">🏬</div>
             <h3>Store Management</h3>
             <p>Create stores, assign store owners, view ratings, and sort stores by rating.</p>
-            <Link to="/admin/stores" className="btn btn--outline btn--sm">
+            <Link to={ROUTES.ADMIN_STORES} className="btn btn--outline btn--sm">
               Manage Stores →
             </Link>
           </div>
