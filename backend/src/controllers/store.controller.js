@@ -46,6 +46,18 @@ export const getMyStoreRatings = asyncHandler(async (req, res) => {
 });
 
 /**
+ * GET /api/v1/stores/my-store/stats
+ * STORE_OWNER only — returns average rating, total count, and 1-5 star distribution.
+ */
+export const getMyStoreStats = asyncHandler(async (req, res) => {
+  const stats = await storeService.getMyStoreStats(req.user.id);
+  return sendSuccess(res, {
+    data: stats,
+    message: 'Store rating statistics retrieved successfully.',
+  });
+});
+
+/**
  * GET /api/v1/stores/:id
  */
 export const getStoreById = asyncHandler(async (req, res) => {

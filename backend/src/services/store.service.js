@@ -254,3 +254,51 @@ export const getMyStoreRatings = async (ownerId, queryParams = {}) => {
     pagination,
   };
 };
+
+/**
+ * Get rating statistics and 1-5 star distribution for the authenticated STORE_OWNER.
+ *
+ * @param {number} ownerId
+ * @returns {Promise<Object|null>}
+ */
+export const getMyStoreStats = async (ownerId) => {
+  const storeRow = await storeModel.findByOwnerId(ownerId);
+  if (!storeRow) {
+    return null;
+  }
+
+  const storeId = storeRow.store_id || storeRow.id;
+  const distributionRows = await ratingModel.getRatingDistribution(storeId);
+
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let totalRatings = 0;
+  let totalSum = 0;
+
+  distributionRows.forEach((row) => {
+    const val = parseInt(row.rating_value, 10);
+    const cnt = parseInt(row.count, 10);
+    distribution[val] = cnt;
+    totalRatings += cnt;
+    totalSum += val * cnt;
+  });
+
+  const averageRating = totalRatings > 0
+    ? parseFloat((totalSum / totalRatings).toFixed(1))
+    : 0.0;
+
+  const percentages = { 1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0, 5: 0.0 };
+  if (totalRatings > 0) {
+    for (let star = 1; star <= 5; star++) {
+      percentages[star] = parseFloat(((distribution[star] / totalRatings) * 100).toFixed(1));
+    }
+  }
+
+  return {
+    store_id: storeId,
+    store_name: storeRow.store_name || storeRow.name,
+    average_rating: averageRating,
+    total_ratings: totalRatings,
+    distribution,
+    percentages,
+  };
+};
