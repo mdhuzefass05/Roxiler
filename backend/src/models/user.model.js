@@ -36,6 +36,17 @@ export const findById = async (id) => {
 };
 
 /**
+ * Find a user by ID with password_hash (internal auth use only).
+ */
+export const findByIdWithPassword = async (id) => {
+  const { rows } = await query(
+    'SELECT * FROM users WHERE id = $1 LIMIT 1',
+    [id]
+  );
+  return rows[0] || null;
+};
+
+/**
  * Create a new user.
  * @param {{ name, email, password_hash, address, role }} params
  */
