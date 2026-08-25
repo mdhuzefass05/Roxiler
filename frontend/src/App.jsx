@@ -18,11 +18,14 @@ import OwnerDashboard from './pages/owner/OwnerDashboard';
 import NotFound from './pages/NotFound';
 import { ROLES, ROUTES } from './utils/constants';
 
+import ClayBackgroundBlobs from './components/common/ClayBackgroundBlobs';
+
 const App = () => {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <Router>
+          <ClayBackgroundBlobs />
           <Navbar />
           <Routes>
             {/* Public routes */}
