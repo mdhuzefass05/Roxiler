@@ -69,8 +69,19 @@ export const getDashboardStats = async () => {
     total_admin_users: 0,
   };
 
+  const parsedCounts = {
+    total_users: parseInt(stats.total_users || 0, 10),
+    total_stores: parseInt(stats.total_stores || 0, 10),
+    total_ratings: parseInt(stats.total_ratings || 0, 10),
+    total_normal_users: parseInt(stats.total_normal_users || 0, 10),
+    total_store_owners: parseInt(stats.total_store_owners || 0, 10),
+    total_admin_users: parseInt(stats.total_admin_users || 0, 10),
+  };
+
   return {
     ...stats,
+    ...parsedCounts,
+    counts: parsedCounts,
     top_stores: topStoresRes.rows.map((row) => ({
       id: row.id,
       name: row.name,

@@ -101,7 +101,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const counts = stats?.counts || { total_users: 0, total_stores: 0, total_ratings: 0 };
+  const counts = {
+    total_users: stats?.counts?.total_users ?? stats?.total_users ?? 0,
+    total_stores: stats?.counts?.total_stores ?? stats?.total_stores ?? 0,
+    total_ratings: stats?.counts?.total_ratings ?? stats?.total_ratings ?? 0,
+    total_normal_users: stats?.counts?.total_normal_users ?? stats?.total_normal_users ?? 0,
+    total_store_owners: stats?.counts?.total_store_owners ?? stats?.total_store_owners ?? 0,
+    total_admin_users: stats?.counts?.total_admin_users ?? stats?.total_admin_users ?? 0,
+  };
   const topStores = stats?.top_stores || [];
   const recentRatings = stats?.recent_ratings || [];
 
