@@ -9,6 +9,7 @@ import {
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
+import StarRating from '../../components/common/StarRating';
 import {
   validateName,
   validateEmail,
@@ -604,10 +605,11 @@ const UserManagement = () => {
                     </p>
                     <div className="owner-store-stats">
                       <div className="owner-stat-pill">
-                        ⭐ Average Rating: <strong>{selectedUser.store.average_rating.toFixed(2)} / 5</strong>
+                        <StarRating value={selectedUser.store.average_rating} size="sm" />
+                        <span><strong>{selectedUser.store.average_rating.toFixed(2)} / 5</strong></span>
                       </div>
                       <div className="owner-stat-pill">
-                        👥 Total Ratings Received: <strong>{selectedUser.store.total_ratings}</strong>
+                        👥 Total Ratings: <strong>{selectedUser.store.total_ratings}</strong>
                       </div>
                     </div>
                   </div>
