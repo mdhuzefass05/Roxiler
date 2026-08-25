@@ -3,44 +3,67 @@ import { query } from '../database/index.js';
 /**
  * User Model — raw SQL query functions.
  *
- * This module only performs DB operations. All business logic lives in the service.
+ * Column reference:
+ *   password_hash  VARCHAR(255)  — bcrypt hash; never returned in SELECT *
  *
- * Schema defined in: src/database/migrations/001_initial.sql
+ * Schema: src/database/migrations/001_initial.sql
  */
 
+// Safe columns to return in SELECT (excludes password_hash)
+const SAFE_COLUMNS =
+  'id, name, email, address, role, created_at, updated_at';
+
+/**
+ * Find a user by email (includes password_hash for auth comparison).
+ */
 export const findByEmail = async (email) => {
-  const { rows } = await query('SELECT * FROM users WHERE email = $1 LIMIT 1', [email]);
+  const { rows } = await query(
+    'SELECT * FROM users WHERE email = $1 LIMIT 1',
+    [email]
+  );
   return rows[0] || null;
 };
 
+/**
+ * Find a user by ID — excludes password_hash.
+ */
 export const findById = async (id) => {
   const { rows } = await query(
-    'SELECT id, name, email, address, role, created_at, updated_at FROM users WHERE id = $1 LIMIT 1',
+    `SELECT ${SAFE_COLUMNS} FROM users WHERE id = $1 LIMIT 1`,
     [id]
   );
   return rows[0] || null;
 };
 
 /**
- * @param {{ name, email, password, address, role }} params
+ * Create a new user.
+ * @param {{ name, email, password_hash, address, role }} params
  */
-export const createUser = async ({ name, email, password, address, role = 'NORMAL_USER' }) => {
+export const createUser = async ({
+  name,
+  email,
+  password_hash,
+  address,
+  role = 'NORMAL_USER',
+}) => {
   const { rows } = await query(
-    `INSERT INTO users (name, email, password, address, role)
+    `INSERT INTO users (name, email, password_hash, address, role)
      VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, name, email, address, role, created_at`,
-    [name, email, password, address, role]
+     RETURNING ${SAFE_COLUMNS}`,
+    [name, email, password_hash, address, role]
   );
   return rows[0];
 };
 
 /**
- * Get all users with optional WHERE clause and pagination.
- * @param {string} whereClause - e.g. "WHERE role = $1"
- * @param {Array}  params      - Positional params for whereClause
- * @param {string} orderClause - e.g. "ORDER BY name ASC"
- * @param {number} limit
- * @param {number} offset
+ * Paginated, filterable user list (SYSTEM_ADMIN use).
+ *
+ * @param {Object} opts
+ * @param {string} opts.whereClause   - e.g. "WHERE role = $1 AND name ILIKE $2"
+ * @param {Array}  opts.params        - Positional params for whereClause
+ * @param {string} opts.orderClause   - e.g. "ORDER BY name ASC"
+ * @param {number} opts.limit
+ * @param {number} opts.offset
  */
 export const findAll = async ({
   whereClause = '',
@@ -49,18 +72,21 @@ export const findAll = async ({
   limit = 10,
   offset = 0,
 } = {}) => {
-  const limitOffset = `LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+  const p = [...params, limit, offset];
   const { rows } = await query(
-    `SELECT id, name, email, address, role, created_at, updated_at
+    `SELECT ${SAFE_COLUMNS}
      FROM users
      ${whereClause}
      ${orderClause}
-     ${limitOffset}`,
-    [...params, limit, offset]
+     LIMIT $${p.length - 1} OFFSET $${p.length}`,
+    p
   );
   return rows;
 };
 
+/**
+ * Count users with optional WHERE filter.
+ */
 export const countAll = async ({ whereClause = '', params = [] } = {}) => {
   const { rows } = await query(
     `SELECT COUNT(*)::INTEGER AS total FROM users ${whereClause}`,
@@ -69,14 +95,23 @@ export const countAll = async ({ whereClause = '', params = [] } = {}) => {
   return rows[0].total;
 };
 
-export const updatePassword = async (id, hashedPassword) => {
+/**
+ * Update a user's password_hash.
+ */
+export const updatePasswordHash = async (id, passwordHash) => {
   const { rows } = await query(
-    'UPDATE users SET password = $1 WHERE id = $2 RETURNING id, email, updated_at',
-    [hashedPassword, id]
+    `UPDATE users
+     SET password_hash = $1
+     WHERE id = $2
+     RETURNING id, email, updated_at`,
+    [passwordHash, id]
   );
   return rows[0];
 };
 
+/**
+ * Delete a user by ID. Returns the deleted record id, or null if not found.
+ */
 export const deleteById = async (id) => {
   const { rows } = await query(
     'DELETE FROM users WHERE id = $1 RETURNING id',

@@ -2,6 +2,7 @@ import { body, param } from 'express-validator';
 
 /**
  * Rating validators — express-validator chains.
+ * Field name: rating_value (matches DB column)
  */
 
 /**
@@ -23,10 +24,10 @@ export const submitRating = [
     .isInt({ min: 1 }).withMessage('Store ID must be a positive integer.')
     .toInt(),
 
-  body('rating')
-    .notEmpty().withMessage('Rating is required.')
+  body('rating_value')
+    .notEmpty().withMessage('Rating value is required.')
     .isInt({ min: 1, max: 5 })
-    .withMessage('Rating must be an integer between 1 and 5.')
+    .withMessage('Rating value must be an integer between 1 and 5.')
     .toInt(),
 ];
 
@@ -37,9 +38,9 @@ export const submitRating = [
 export const updateRating = [
   ...storeIdParam,
 
-  body('rating')
-    .notEmpty().withMessage('Rating is required.')
+  body('rating_value')
+    .notEmpty().withMessage('Rating value is required.')
     .isInt({ min: 1, max: 5 })
-    .withMessage('Rating must be an integer between 1 and 5.')
+    .withMessage('Rating value must be an integer between 1 and 5.')
     .toInt(),
 ];

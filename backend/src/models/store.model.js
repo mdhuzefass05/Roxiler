@@ -2,80 +2,86 @@ import { query } from '../database/index.js';
 
 /**
  * Store Model — raw SQL query functions.
- * Schema defined in: src/database/migrations/001_initial.sql
+ *
+ * For listings with average_rating + total_ratings, use the
+ * `store_ratings_summary` VIEW (see migrations/001_initial.sql).
+ *
+ * Schema: src/database/migrations/001_initial.sql
  */
 
+/**
+ * Get all stores from the summary view.
+ * Supports dynamic WHERE, ORDER, and pagination.
+ *
+ * @param {Object} opts
+ * @param {string} opts.whereClause  - e.g. "WHERE store_name ILIKE $1"
+ * @param {Array}  opts.params       - Positional params for whereClause
+ * @param {string} opts.orderClause  - e.g. "ORDER BY average_rating DESC"
+ * @param {number} opts.limit
+ * @param {number} opts.offset
+ */
 export const findAll = async ({
   whereClause = '',
   params = [],
-  orderClause = 'ORDER BY s.name ASC',
+  orderClause = 'ORDER BY store_name ASC',
   limit = 10,
   offset = 0,
 } = {}) => {
-  const limitOffset = `LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+  const p = [...params, limit, offset];
   const { rows } = await query(
-    `SELECT
-       s.id, s.name, s.email, s.address, s.owner_id, s.created_at,
-       COALESCE(ROUND(AVG(r.rating)::NUMERIC, 2), 0) AS average_rating,
-       COUNT(r.id)::INTEGER                           AS total_ratings
-     FROM stores s
-     LEFT JOIN ratings r ON r.store_id = s.id
+    `SELECT *
+     FROM store_ratings_summary
      ${whereClause}
-     GROUP BY s.id
      ${orderClause}
-     ${limitOffset}`,
-    [...params, limit, offset]
+     LIMIT $${p.length - 1} OFFSET $${p.length}`,
+    p
   );
   return rows;
 };
 
+/**
+ * Count stores (with optional WHERE on the summary view).
+ */
 export const countAll = async ({ whereClause = '', params = [] } = {}) => {
   const { rows } = await query(
-    `SELECT COUNT(DISTINCT s.id)::INTEGER AS total
-     FROM stores s
-     LEFT JOIN ratings r ON r.store_id = s.id
-     ${whereClause}`,
+    `SELECT COUNT(*)::INTEGER AS total FROM store_ratings_summary ${whereClause}`,
     params
   );
   return rows[0].total;
 };
 
+/**
+ * Find a single store by ID (from summary view).
+ */
 export const findById = async (id) => {
   const { rows } = await query(
-    `SELECT
-       s.*,
-       COALESCE(ROUND(AVG(r.rating)::NUMERIC, 2), 0) AS average_rating,
-       COUNT(r.id)::INTEGER                           AS total_ratings
-     FROM stores s
-     LEFT JOIN ratings r ON r.store_id = s.id
-     WHERE s.id = $1
-     GROUP BY s.id`,
+    'SELECT * FROM store_ratings_summary WHERE store_id = $1',
     [id]
   );
   return rows[0] || null;
 };
 
+/**
+ * Find the store owned by a specific user (STORE_OWNER dashboard).
+ */
 export const findByOwnerId = async (ownerId) => {
   const { rows } = await query(
-    `SELECT
-       s.*,
-       COALESCE(ROUND(AVG(r.rating)::NUMERIC, 2), 0) AS average_rating,
-       COUNT(r.id)::INTEGER                           AS total_ratings
-     FROM stores s
-     LEFT JOIN ratings r ON r.store_id = s.id
-     WHERE s.owner_id = $1
-     GROUP BY s.id`,
+    'SELECT * FROM store_ratings_summary WHERE owner_id = $1',
     [ownerId]
   );
   return rows[0] || null;
 };
 
-export const createStore = async ({ name, email, address, ownerId }) => {
+/**
+ * Create a new store.
+ * @param {{ name, email, address, owner_id }} params
+ */
+export const createStore = async ({ name, email, address, owner_id }) => {
   const { rows } = await query(
     `INSERT INTO stores (name, email, address, owner_id)
      VALUES ($1, $2, $3, $4)
      RETURNING *`,
-    [name, email, address, ownerId || null]
+    [name, email, address, owner_id || null]
   );
   return rows[0];
 };
