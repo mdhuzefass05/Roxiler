@@ -21,17 +21,41 @@ export const findByUserAndStore = async (userId, storeId) => {
 };
 
 /**
- * Get all ratings for a store, joined with the rater's name.
+ * Get all ratings for a store, joined with the rater's full profile (name, email, address).
  */
 export const findByStoreId = async (storeId) => {
   const { rows } = await query(
     `SELECT
-       r.id, r.user_id, r.store_id, r.rating_value, r.created_at, r.updated_at,
-       u.name AS user_name
+       r.id,
+       r.user_id,
+       r.store_id,
+       r.rating_value,
+       r.created_at,
+       r.updated_at,
+       u.name    AS user_name,
+       u.email   AS user_email,
+       u.address AS user_address
      FROM ratings r
      JOIN users u ON u.id = r.user_id
      WHERE r.store_id = $1
      ORDER BY r.created_at DESC`,
+    [storeId]
+  );
+  return rows;
+};
+
+/**
+ * Get 1-to-5 star rating breakdown for a store.
+ */
+export const getRatingDistribution = async (storeId) => {
+  const { rows } = await query(
+    `SELECT
+       rating_value,
+       COUNT(*)::INTEGER AS count
+     FROM ratings
+     WHERE store_id = $1
+     GROUP BY rating_value
+     ORDER BY rating_value DESC`,
     [storeId]
   );
   return rows;

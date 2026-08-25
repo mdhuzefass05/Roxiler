@@ -1,5 +1,6 @@
 import * as storeModel from '../models/store.model.js';
 import * as userModel from '../models/user.model.js';
+import * as ratingModel from '../models/rating.model.js';
 import { parsePagination, buildPaginationMeta } from '../utils/pagination.js';
 import AppError from '../utils/AppError.js';
 
@@ -139,12 +140,47 @@ export const createStore = async ({ name, email, address, owner_id }) => {
 };
 
 /**
- * Get the store owned by the authenticated STORE_OWNER.
+ * Get the store owned by the authenticated STORE_OWNER with ratings breakdown and rater profiles.
  *
  * @param {number} ownerId
  * @returns {Promise<Object|null>}
  */
 export const getMyStore = async (ownerId) => {
-  const row = await storeModel.findByOwnerId(ownerId);
-  return row ? formatStore(row) : null;
+  // 1. Fetch store from summary view
+  const storeRow = await storeModel.findByOwnerId(ownerId);
+  if (!storeRow) {
+    return null;
+  }
+
+  const storeId = storeRow.store_id || storeRow.id;
+
+  // 2. Fetch raters list + 1-to-5 distribution
+  const [ratingRows, distributionRows] = await Promise.all([
+    ratingModel.findByStoreId(storeId),
+    ratingModel.getRatingDistribution(storeId),
+  ]);
+
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  distributionRows.forEach((row) => {
+    distribution[row.rating_value] = parseInt(row.count, 10);
+  });
+
+  const ratings = ratingRows.map((r) => ({
+    id: r.id,
+    rating_value: r.rating_value,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+    user: {
+      id: r.user_id,
+      name: r.user_name,
+      email: r.user_email,
+      address: r.user_address,
+    },
+  }));
+
+  return {
+    ...formatStore(storeRow),
+    distribution,
+    ratings,
+  };
 };
