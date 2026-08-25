@@ -9,23 +9,17 @@
  *   ?limit=10     (default: 10, max: 100)
  *   ?sort=name    (default: 'created_at')
  *   ?order=asc    (default: 'desc')
- *
- * @example
- *   // In a service:
- *   const { limit, offset, sort, order, meta } = parsePagination(req.query);
- *   const rows = await query(
- *     `SELECT * FROM stores ORDER BY ${sort} ${order} LIMIT $1 OFFSET $2`,
- *     [limit, offset]
- *   );
- *   sendSuccess(res, { data: rows, meta });
  */
 
 // Columns that are safe to sort by (whitelist prevents SQL injection)
 const ALLOWED_SORT_COLUMNS = new Set([
   'id',
   'name',
+  'store_name',
   'email',
+  'store_email',
   'address',
+  'store_address',
   'created_at',
   'updated_at',
   'rating',
@@ -40,11 +34,11 @@ const ALLOWED_SORT_COLUMNS = new Set([
  */
 export const parsePagination = (query = {}) => {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 10));
+  const limit = Math.min(100, Math.max(1, parseInt(query.limit || query.pageSize, 10) || 10));
   const offset = (page - 1) * limit;
 
-  const rawSort = query.sort || 'created_at';
-  const sort = ALLOWED_SORT_COLUMNS.has(rawSort) ? rawSort : 'created_at';
+  const rawSort = query.sort || 'name';
+  const sort = ALLOWED_SORT_COLUMNS.has(rawSort) ? rawSort : 'name';
 
   const order = query.order?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
@@ -64,8 +58,10 @@ export const parsePagination = (query = {}) => {
 export const buildPaginationMeta = (total, page, limit) => ({
   page,
   limit,
+  pageSize: limit,
   total,
-  totalPages: Math.ceil(total / limit),
+  totalItems: total,
+  totalPages: Math.ceil(total / limit) || 1,
   hasNextPage: page * limit < total,
   hasPrevPage: page > 1,
 });
