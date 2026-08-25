@@ -68,10 +68,16 @@ const StarRating = ({
 
       {showNumber && (
         <span className="star-rating__score">
-          {numericValue > 0 ? numericValue.toFixed(1) : 'Not Rated'}
-          {totalCount !== null && (
+          {numericValue > 0 ? (
+            <>
+              <strong>{numericValue.toFixed(1)}</strong> / 5.0
+            </>
+          ) : (
+            <span className="text-muted">No ratings yet</span>
+          )}
+          {totalCount !== null && numericValue > 0 && (
             <span className="star-rating__count">
-              ({totalCount} {totalCount === 1 ? 'rating' : 'ratings'})
+              ({totalCount} {totalCount === 1 ? 'review' : 'reviews'})
             </span>
           )}
         </span>
