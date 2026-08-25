@@ -16,7 +16,14 @@ router.post('/',
   ratingController.submitRating
 );
 
-// NORMAL_USER: update their rating for a store
+// NORMAL_USER: update their rating for a store (supports both PUT and PATCH)
+router.put('/:storeId',
+  authorize('NORMAL_USER'),
+  ratingValidator.updateRating,
+  validate,
+  ratingController.updateRating
+);
+
 router.patch('/:storeId',
   authorize('NORMAL_USER'),
   ratingValidator.updateRating,

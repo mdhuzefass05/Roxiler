@@ -82,7 +82,7 @@ export const createRating = async ({ userId, storeId, rating_value }) => {
 export const updateRating = async (userId, storeId, rating_value) => {
   const { rows } = await query(
     `UPDATE ratings
-     SET rating_value = $1
+     SET rating_value = $1, updated_at = NOW()
      WHERE user_id = $2 AND store_id = $3
      RETURNING *`,
     [rating_value, userId, storeId]
