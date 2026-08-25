@@ -55,8 +55,8 @@ export const updateProfile = [
   body('name')
     .optional()
     .trim()
-    .isLength({ min: 20, max: 60 })
-    .withMessage('Name must be between 20 and 60 characters.'),
+    .isLength({ min: 3, max: 60 })
+    .withMessage('Name must be between 3 and 60 characters.'),
 
   body('address')
     .optional()

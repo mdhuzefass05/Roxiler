@@ -37,7 +37,7 @@ const BCRYPT_ROUNDS = 12;
 const SEED_USERS = [
   // 1. Primary Demo Admin
   {
-    name: 'Rajesh Sharma System Administrator',
+    name: 'MD Huzefa S',
     email: 'admin@storerate.dev',
     password: 'Admin@1234',
     address: '101 Cyber Towers, HITEC City, Hyderabad, Telangana 500081',
@@ -531,7 +531,7 @@ const seed = async () => {
     console.log('\n' + '─'.repeat(70));
     console.log('  Database Seeding Complete with Indian Business & User Profiles!');
     console.log('\n  Quick Demo Logins:');
-    console.log('  [SYSTEM_ADMIN] admin@storerate.dev   → Admin@1234 (Rajesh Sharma)');
+    console.log('  [SYSTEM_ADMIN] admin@storerate.dev   → Admin@1234 (MD Huzefa S)');
     console.log('  [STORE_OWNER]  owner@storerate.dev   → Owner@1234 (Vikramaditya Verma)');
     console.log('  [NORMAL_USER]  user@storerate.dev    → User@1234  (Aarav Patel)');
     console.log('─'.repeat(70) + '\n');
