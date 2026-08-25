@@ -3,7 +3,7 @@ import * as userModel from '../models/user.model.js';
 import { signToken } from '../utils/jwt.js';
 import AppError from '../utils/AppError.js';
 
-const BCRYPT_ROUNDS = 10;
+const BCRYPT_ROUNDS = 12;
 
 /**
  * Format safe user object for client responses (strips password / password_hash).
