@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getMyStoreApi, getMyStoreRatingsApi } from '../../api/stores.api';
+import { getMyStoreApi, getMyStoreRatingsApi, getMyStoreStatsApi } from '../../api/stores.api';
 import useAuth from '../../hooks/useAuth';
 import Button from '../../components/common/Button';
 import Pagination from '../../components/common/Pagination';
@@ -10,7 +10,13 @@ const OwnerDashboard = () => {
 
   // ── Dashboard State ────────────────────────────────────────────────
   const [store, setStore] = useState(null);
-  const [distribution, setDistribution] = useState({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+  const [stats, setStats] = useState({
+    average_rating: 0,
+    total_ratings: 0,
+    distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    percentages: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+  });
+
   const [ratings, setRatings] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -28,23 +34,38 @@ const OwnerDashboard = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ── Initial Store Load ─────────────────────────────────────────────
-  const fetchStoreProfile = useCallback(async () => {
+  // ── Initial Store & Stats Load ─────────────────────────────────────
+  const fetchStoreProfileAndStats = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getMyStoreApi();
-      const storeData = res?.data;
+      const [storeRes, statsRes] = await Promise.all([
+        getMyStoreApi(),
+        getMyStoreStatsApi(),
+      ]);
+
+      const storeData = storeRes?.data;
+      const statsData = statsRes?.data;
+
       if (storeData) {
         setStore(storeData);
-        setDistribution(storeData.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+        if (statsData) {
+          setStats(statsData);
+        } else {
+          setStats({
+            average_rating: storeData.average_rating || 0,
+            total_ratings: storeData.total_ratings || 0,
+            distribution: storeData.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+            percentages: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+          });
+        }
       } else {
         setStore(null);
       }
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        'Failed to load store data. Please try again.'
+        'Failed to load store profile and analytics. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -52,8 +73,8 @@ const OwnerDashboard = () => {
   }, []);
 
   useEffect(() => {
-    fetchStoreProfile();
-  }, [fetchStoreProfile]);
+    fetchStoreProfileAndStats();
+  }, [fetchStoreProfileAndStats]);
 
   // ── Fetch Paginated Ratings Table ──────────────────────────────────
   const fetchRatingsTable = useCallback(async () => {
@@ -113,8 +134,10 @@ const OwnerDashboard = () => {
     return <span className="sort-icon active">{sort.order === 'asc' ? '▲' : '▼'}</span>;
   };
 
-  // ── Calculate Distribution Percentage ──────────────────────────────
-  const totalReviews = store?.total_ratings || 0;
+  // ── Stats Calculations ─────────────────────────────────────────────
+  const totalReviews = stats?.total_ratings ?? store?.total_ratings ?? 0;
+  const avgRating = stats?.average_rating ?? store?.average_rating ?? 0.0;
+  const distribution = stats?.distribution || store?.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   const fiveStarCount = distribution[5] || 0;
   const fiveStarPercent = totalReviews > 0 ? ((fiveStarCount / totalReviews) * 100).toFixed(0) : 0;
 
@@ -125,7 +148,7 @@ const OwnerDashboard = () => {
           <div className="spinner-wrapper">
             <span className="spinner" />
           </div>
-          <p>Loading your store performance dashboard…</p>
+          <p>Connecting to database and calculating store metrics…</p>
         </div>
       </main>
     );
@@ -136,7 +159,7 @@ const OwnerDashboard = () => {
       <main className="dashboard-page">
         <div className="alert alert--error" role="alert">
           <span>{error}</span>
-          <Button variant="danger" size="sm" onClick={fetchStoreProfile}>
+          <Button variant="danger" size="sm" onClick={fetchStoreProfileAndStats}>
             Retry
           </Button>
         </div>
@@ -179,7 +202,7 @@ const OwnerDashboard = () => {
           <p>📍 {store.address} &nbsp;•&nbsp; ✉️ {store.email}</p>
         </div>
         <div className="dashboard__actions">
-          <Button variant="outline" size="sm" onClick={fetchStoreProfile}>
+          <Button variant="outline" size="sm" onClick={fetchStoreProfileAndStats}>
             ↻ Refresh Analytics
           </Button>
         </div>
@@ -196,12 +219,12 @@ const OwnerDashboard = () => {
           <h3>Average Rating</h3>
           <div className="owner-rating-score-box">
             <p className="stat-card__value">
-              {store.average_rating > 0 ? store.average_rating.toFixed(1) : '0.0'}
+              {avgRating > 0 ? avgRating.toFixed(1) : '0.0'}
             </p>
             <span className="stat-card__max">/ 5.0</span>
           </div>
           <div style={{ marginTop: 'var(--space-xs)' }}>
-            <StarRating value={store.average_rating} size="sm" />
+            <StarRating value={avgRating} size="sm" />
           </div>
         </div>
 
@@ -212,7 +235,7 @@ const OwnerDashboard = () => {
             <span className="stat-card__tag">Feedback</span>
           </div>
           <h3>Total Customer Ratings</h3>
-          <p className="stat-card__value">{store.total_ratings}</p>
+          <p className="stat-card__value">{totalReviews}</p>
           <div className="stat-card__footer-link">
             <span>Verified user reviews</span>
           </div>
