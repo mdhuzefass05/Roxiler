@@ -11,6 +11,7 @@ import StarRating from '../../components/common/StarRating';
 import SkeletonCard from '../../components/common/SkeletonCard';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import EditProfileModal from '../../components/common/EditProfileModal';
+import { getStorePhoto, getUserAvatar } from '../../utils/storeImages';
 
 const STORE_CATEGORIES = [
   'All',
@@ -30,23 +31,6 @@ const RATING_LABELS = {
 };
 
 const FAVORITES_STORAGE_KEY = 'storerate_favorites';
-
-const getCategoryBannerClass = (category) => {
-  switch (category) {
-    case 'Tech & Electronics':
-      return 'store-card__banner--tech';
-    case 'Grocery & Mart':
-      return 'store-card__banner--grocery';
-    case 'Fashion & Boutique':
-      return 'store-card__banner--fashion';
-    case 'Cafe & Dining':
-      return 'store-card__banner--cafe';
-    case 'Services & Wellness':
-      return 'store-card__banner--wellness';
-    default:
-      return 'store-card__banner--general';
-  }
-};
 
 const getCategoryIcon = (category) => {
   switch (category) {
@@ -474,22 +458,34 @@ const UserDashboard = () => {
 
             return (
               <article key={s.id} className="store-card">
-                {/* Visual Category Cover Banner */}
-                <div className={`store-card__banner ${getCategoryBannerClass(s.category)}`}>
-                  <span className="store-card__banner-badge">
-                    {getCategoryIcon(s.category)} {s.category || 'General'}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="status-dot--open" style={{ background: 'var(--color-banner-badge-bg)', padding: '0.2rem 0.5rem', borderRadius: '10px' }}>
-                      Open Today
+                {/* Natural Storefront Cover Photography */}
+                <div className="store-card__photo-container">
+                  <img
+                    src={getStorePhoto(s.name, s.category)}
+                    alt={s.name}
+                    className="store-card__photo-img"
+                    loading="lazy"
+                  />
+                  <div className="store-card__photo-scrim">
+                    <span className="store-card__banner-badge">
+                      {getCategoryIcon(s.category)} {s.category || 'General'}
                     </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="status-dot--open" style={{ background: 'var(--color-banner-badge-bg)', padding: '0.2rem 0.5rem', borderRadius: '10px' }}>
+                        Open Today
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="store-card__content">
                   <div>
                     <div className="store-card__header">
-                      <div className="store-card__icon">{getCategoryIcon(s.category)}</div>
+                      <img
+                        src={getStorePhoto(s.name, s.category)}
+                        alt={s.name}
+                        className="store-thumb-photo"
+                      />
                       <div className="store-card__title-wrap" style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
                           <h2 className="store-card__name">{s.name}</h2>
@@ -711,8 +707,16 @@ const UserDashboard = () => {
                     borderRadius: '18px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <strong>{item.store_name}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img
+                        src={getStorePhoto(item.store_name)}
+                        alt=""
+                        className="store-thumb-photo"
+                        style={{ width: '2.2rem', height: '2.2rem', borderRadius: '10px' }}
+                      />
+                      <strong>{item.store_name}</strong>
+                    </div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       <StarRating value={item.rating_value} size="sm" />
                       <strong style={{ color: 'var(--color-accent-amber)' }}>{item.rating_value} ★</strong>

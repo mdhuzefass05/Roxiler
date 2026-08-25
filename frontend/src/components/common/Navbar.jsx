@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import ThemeToggle from './ThemeToggle';
 import { ROLES, ROUTES } from '../../utils/constants';
+import { getUserAvatar } from '../../utils/storeImages';
 
 /**
  * Navbar — Floating Clay Pill Navigation.
@@ -27,16 +28,6 @@ const Navbar = () => {
       default:
         return 'badge--user';
     }
-  };
-
-  const getUserInitials = (name) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0].toUpperCase())
-      .join('');
   };
 
   return (
@@ -113,9 +104,12 @@ const Navbar = () => {
 
           {isAuthenticated && (
             <div className="nav-user-badge">
-              <div className="nav-user-avatar" title={user?.name}>
-                {getUserInitials(user?.name)}
-              </div>
+              <img
+                src={getUserAvatar(user?.id || user?.email || user?.name)}
+                alt={user?.name}
+                className="user-avatar-photo"
+                style={{ width: '2.2rem', height: '2.2rem' }}
+              />
               <span className="nav-user-name">{user?.name}</span>
               <span className={`badge ${getRoleBadgeClass(user?.role)}`}>
                 {user?.role?.replace('_', ' ')}

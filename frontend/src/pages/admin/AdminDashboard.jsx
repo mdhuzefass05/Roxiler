@@ -11,6 +11,7 @@ import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import EditProfileModal from '../../components/common/EditProfileModal';
 import { exportUsersCsv, exportStoresCsv } from '../../utils/export';
 import { ROUTES } from '../../utils/constants';
+import { getStorePhoto, getUserAvatar } from '../../utils/storeImages';
 
 const timeAgo = (dateStr) => {
   if (!dateStr) return '';
@@ -259,6 +260,12 @@ const AdminDashboard = () => {
                     <span style={{ fontSize: '1.2rem', fontWeight: 900, width: '1.5rem', textAlign: 'center' }}>
                       {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                     </span>
+                    <img
+                      src={getStorePhoto(s.name, s.category)}
+                      alt=""
+                      className="store-thumb-photo"
+                      style={{ width: '2.5rem', height: '2.5rem', borderRadius: '12px' }}
+                    />
                     <div>
                       <strong style={{ display: 'block', fontSize: '0.95rem' }}>{s.name}</strong>
                       <span className="badge badge--user" style={{ fontSize: '0.7rem' }}>{s.category || 'General'}</span>
@@ -302,14 +309,22 @@ const AdminDashboard = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <strong>{r.user_name} → {r.store_name}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <img
+                        src={getUserAvatar(r.user_name || r.user_id)}
+                        alt=""
+                        className="user-avatar-photo"
+                        style={{ width: '2rem', height: '2rem' }}
+                      />
+                      <strong>{r.user_name} → {r.store_name}</strong>
+                    </div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       <StarRating value={r.rating_value} size="sm" />
                       <strong style={{ color: 'var(--color-accent-amber)' }}>{r.rating_value} ★</strong>
                     </div>
                   </div>
                   {r.comment && (
-                    <p style={{ fontSize: '0.85rem', fontStyle: 'italic', margin: '0.25rem 0', color: 'var(--color-foreground)' }}>
+                    <p style={{ fontSize: '0.85rem', fontStyle: 'italic', margin: '0.25rem 0', color: 'var(--color-foreground)', paddingLeft: '2.5rem' }}>
                       &ldquo;{r.comment}&rdquo;
                     </p>
                   )}

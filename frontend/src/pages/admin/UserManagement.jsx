@@ -22,6 +22,7 @@ import {
 } from '../../utils/validators';
 import { exportUsersCsv } from '../../utils/export';
 import { ROLES, ROUTES } from '../../utils/constants';
+import { getUserAvatar } from '../../utils/storeImages';
 
 const INITIAL_FORM = {
   name: '',
@@ -450,10 +451,14 @@ const UserManagement = () => {
                       />
                     </td>
                     <td className="table-cell-bold">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="customer-avatar-badge">
-                          {u.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img
+                          src={getUserAvatar(u.id || u.email || u.name)}
+                          alt=""
+                          className="user-avatar-photo"
+                          style={{ width: '2.25rem', height: '2.25rem' }}
+                          loading="lazy"
+                        />
                         <span>{u.name}</span>
                       </div>
                     </td>

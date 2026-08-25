@@ -11,6 +11,7 @@ import OwnerReplyModal from '../../components/common/OwnerReplyModal';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import EditProfileModal from '../../components/common/EditProfileModal';
 import { exportReviewsCsv } from '../../utils/export';
+import { getStorePhoto, getUserAvatar } from '../../utils/storeImages';
 
 const OwnerDashboard = () => {
   const { user } = useAuth();
@@ -259,15 +260,36 @@ const OwnerDashboard = () => {
 
   return (
     <main className="dashboard-page">
-      {/* Header */}
+      {/* Visual Storefront Cover Hero Banner */}
+      <div className="store-owner-hero-banner">
+        <img
+          src={getStorePhoto(store.name, store.category)}
+          alt={store.name}
+          className="store-owner-hero-banner__img"
+        />
+        <div className="store-owner-hero-banner__scrim">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
+            <span className="badge badge--user" style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)', color: '#ffffff' }}>
+              {store.category || 'General'}
+            </span>
+            <span style={{ fontSize: '0.8rem', background: '#10b981', color: '#ffffff', padding: '0.2rem 0.6rem', borderRadius: '12px', fontWeight: 800 }}>
+              🟢 Verified Storefront
+            </span>
+          </div>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 900, margin: '0 0 0.35rem 0', color: '#ffffff', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+            {store.name}
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.95rem', margin: 0 }}>
+            📍 {store.address} &nbsp;•&nbsp; ✉️ {store.email}
+          </p>
+        </div>
+      </div>
+
+      {/* Header Actions Bar */}
       <div className="dashboard__header-wrapper">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-            <span className="dashboard__role-tag">Store Owner Portal</span>
-            <span className="badge badge--user">{store.category || 'General'}</span>
-          </div>
-          <h1>{store.name}</h1>
-          <p>📍 {store.address} &nbsp;•&nbsp; ✉️ {store.email}</p>
+          <span className="dashboard__role-tag">Store Owner Portal</span>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0.3rem 0 0 0' }}>Performance Analytics & Reviews</h2>
         </div>
         <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Button variant="outline" size="sm" onClick={handleExportReviews}>
@@ -496,10 +518,13 @@ const OwnerDashboard = () => {
                 ratings.map((r) => (
                   <tr key={r.id}>
                     <td className="table-cell-bold">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="customer-avatar-badge">
-                          {r.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img
+                          src={getUserAvatar(r.user?.id || r.user?.email || r.user?.name)}
+                          alt=""
+                          className="user-avatar-photo"
+                          loading="lazy"
+                        />
                         <span>{r.user?.name}</span>
                       </div>
                     </td>

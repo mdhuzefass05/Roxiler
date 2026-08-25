@@ -13,6 +13,7 @@ import useToast from '../../hooks/useToast';
 import { exportStoresCsv } from '../../utils/export';
 import { validateEmail, validateAddress } from '../../utils/validators';
 import { ROLES, ROUTES } from '../../utils/constants';
+import { getStorePhoto } from '../../utils/storeImages';
 
 const STORE_CATEGORIES = [
   'General',
@@ -552,10 +553,14 @@ const StoreManagement = () => {
                       />
                     </td>
                     <td className="table-cell-bold">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="customer-avatar-badge" style={{ background: 'var(--gradient-secondary)' }}>
-                          🏬
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img
+                          src={getStorePhoto(s.name, s.category)}
+                          alt=""
+                          className="store-thumb-photo"
+                          style={{ width: '2.25rem', height: '2.25rem', borderRadius: '10px' }}
+                          loading="lazy"
+                        />
                         <span>{s.name}</span>
                       </div>
                     </td>
