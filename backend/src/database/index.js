@@ -26,6 +26,22 @@ pool.on('error', (err) => {
   process.exit(1);
 });
 
+let mockQueryHandler = null;
+
+/**
+ * Set a mock query handler for unit/integration tests without a live DB connection.
+ */
+export const setMockQueryHandler = (handler) => {
+  mockQueryHandler = handler;
+};
+
+/**
+ * Reset mock query handler back to default pg pool.
+ */
+export const resetMockQueryHandler = () => {
+  mockQueryHandler = null;
+};
+
 /**
  * Run a parameterised SQL query.
  *
@@ -36,7 +52,12 @@ pool.on('error', (err) => {
  * @example
  *   const { rows } = await query('SELECT * FROM users WHERE id = $1', [id]);
  */
-export const query = (text, params) => pool.query(text, params);
+export const query = (text, params) => {
+  if (mockQueryHandler) {
+    return mockQueryHandler(text, params);
+  }
+  return pool.query(text, params);
+};
 
 /**
  * Acquire a client from the pool for use in transactions.
