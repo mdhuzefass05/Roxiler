@@ -9,10 +9,15 @@ import asyncHandler from '../utils/asyncHandler.js';
 /**
  * GET /api/v1/stores
  * Available to all authenticated users.
+ * Supports filtering by name, email, address + sorting + pagination.
  */
 export const getAllStores = asyncHandler(async (req, res) => {
-  const { stores, meta } = await storeService.getAllStores(req.query);
-  return sendSuccess(res, { data: stores, meta, message: 'Stores retrieved successfully.' });
+  const { stores, pagination } = await storeService.getAllStores(req.query);
+  return sendSuccess(res, {
+    data: { stores, pagination },
+    meta: pagination,
+    message: 'Stores retrieved successfully.',
+  });
 });
 
 /**
@@ -21,7 +26,10 @@ export const getAllStores = asyncHandler(async (req, res) => {
  */
 export const getMyStore = asyncHandler(async (req, res) => {
   const store = await storeService.getMyStore(req.user.id);
-  return sendSuccess(res, { data: store });
+  return sendSuccess(res, {
+    data: store,
+    message: 'Store profile retrieved successfully.',
+  });
 });
 
 /**
@@ -29,7 +37,10 @@ export const getMyStore = asyncHandler(async (req, res) => {
  */
 export const getStoreById = asyncHandler(async (req, res) => {
   const store = await storeService.getStoreById(req.params.id);
-  return sendSuccess(res, { data: store });
+  return sendSuccess(res, {
+    data: store,
+    message: 'Store details retrieved successfully.',
+  });
 });
 
 /**
@@ -38,5 +49,9 @@ export const getStoreById = asyncHandler(async (req, res) => {
  */
 export const createStore = asyncHandler(async (req, res) => {
   const store = await storeService.createStore(req.body);
-  return sendSuccess(res, { data: store, message: 'Store created successfully.', status: 201 });
+  return sendSuccess(res, {
+    data: store,
+    message: 'Store created successfully.',
+    status: 201,
+  });
 });
