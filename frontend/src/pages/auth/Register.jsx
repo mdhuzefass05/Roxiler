@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import BorderGlow from '../../components/common/BorderGlow';
 import {
   validateName,
   validateEmail,
@@ -75,7 +76,15 @@ const Register = () => {
 
   return (
     <main className="auth-page">
-      <div className="auth-card">
+      <BorderGlow
+        className="auth-card"
+        animated={true}
+        borderRadius={48}
+        glowRadius={36}
+        edgeSensitivity={30}
+        glowColor="268 90 75"
+        colors={['#a78bfa', '#f472b6', '#38bdf8']}
+      >
         <div className="auth-card__header">
           <div className="auth-card__badge">New Member Signup</div>
           <h1>Create an Account</h1>
@@ -108,7 +117,7 @@ const Register = () => {
             name="email"
             type="email"
             label="Email Address"
-            placeholder="user@example.com"
+            placeholder="aarav@example.com"
             value={form.email}
             onChange={handleChange}
             error={fieldErrors.email}
@@ -121,7 +130,7 @@ const Register = () => {
             name="address"
             type="text"
             label="Address"
-            placeholder="42 MG Road, Indiranagar, Bengaluru, Karnataka 560038"
+            placeholder="123 Park Avenue, Apartment 4B"
             value={form.address}
             onChange={handleChange}
             error={fieldErrors.address}
@@ -139,7 +148,7 @@ const Register = () => {
             value={form.password}
             onChange={handleChange}
             error={fieldErrors.password}
-            helperText="8–16 chars, 1+ uppercase letter, 1+ special char"
+            helperText="8–16 chars, at least 1 uppercase letter and 1 special character"
             required
             autoComplete="new-password"
           />
@@ -166,11 +175,11 @@ const Register = () => {
           <p>
             Already have an account?{' '}
             <Link to={ROUTES.LOGIN} className="auth-link">
-              Sign In
+              Sign in here
             </Link>
           </p>
         </div>
-      </div>
+      </BorderGlow>
     </main>
   );
 };

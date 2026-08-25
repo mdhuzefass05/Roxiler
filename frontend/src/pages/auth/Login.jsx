@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import BorderGlow from '../../components/common/BorderGlow';
 import { validateEmail } from '../../utils/validators';
 import { ROLES, ROUTES } from '../../utils/constants';
 
@@ -98,7 +99,15 @@ const Login = () => {
 
   return (
     <main className="auth-page">
-      <div className="auth-card">
+      <BorderGlow
+        className="auth-card"
+        animated={true}
+        borderRadius={48}
+        glowRadius={36}
+        edgeSensitivity={30}
+        glowColor="268 90 75"
+        colors={['#a78bfa', '#f472b6', '#38bdf8']}
+      >
         <div className="auth-card__header">
           <div className="auth-card__badge">Store Rating Platform</div>
           <h1>Welcome Back</h1>
@@ -171,7 +180,7 @@ const Login = () => {
             </Link>
           </p>
         </div>
-      </div>
+      </BorderGlow>
     </main>
   );
 };
