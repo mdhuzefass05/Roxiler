@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getMyStoreApi, getMyStoreRatingsApi, getMyStoreStatsApi } from '../../api/stores.api';
 import useAuth from '../../hooks/useAuth';
+import useDebounce from '../../hooks/useDebounce';
 import Button from '../../components/common/Button';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
@@ -24,6 +25,14 @@ const OwnerDashboard = () => {
     total: 0,
     totalPages: 1,
   });
+
+  const [filters, setFilters] = useState({
+    name: '',
+    email: '',
+  });
+
+  const debouncedName = useDebounce(filters.name, 350);
+  const debouncedEmail = useDebounce(filters.email, 350);
 
   const [sort, setSort] = useState({
     column: 'date',
@@ -88,6 +97,9 @@ const OwnerDashboard = () => {
         order: sort.order,
       };
 
+      if (debouncedName.trim()) params.name = debouncedName.trim();
+      if (debouncedEmail.trim()) params.email = debouncedEmail.trim();
+
       const res = await getMyStoreRatingsApi(params);
       const ratingList = res?.data?.ratings || [];
       const meta = res?.data?.pagination || res?.meta || {
@@ -104,7 +116,15 @@ const OwnerDashboard = () => {
     } finally {
       setTableLoading(false);
     }
-  }, [store, pagination.page, pagination.limit, sort.column, sort.order]);
+  }, [
+    store,
+    pagination.page,
+    pagination.limit,
+    sort.column,
+    sort.order,
+    debouncedName,
+    debouncedEmail,
+  ]);
 
   useEffect(() => {
     if (store) {
@@ -113,6 +133,18 @@ const OwnerDashboard = () => {
   }, [store, fetchRatingsTable]);
 
   // ── Handlers ───────────────────────────────────────────────────────
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({ name: '', email: '' });
+    setSort({ column: 'date', order: 'desc' });
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
   const handleSort = (column) => {
     setSort((prev) => ({
       column,
@@ -289,11 +321,54 @@ const OwnerDashboard = () => {
         </div>
       </section>
 
-      {/* ── Customer Reviews Table ────────────────────────────────────── */}
+      {/* ── Customer Reviews Section with Search & Sorting ────────────── */}
       <section className="owner-reviews-section">
         <div className="section-header">
           <h2>Customer Reviews</h2>
           <p>All verified users who submitted ratings for your store</p>
+        </div>
+
+        {/* Reviewer Filter Controls */}
+        <div className="filter-panel" style={{ marginBottom: 'var(--space-lg)' }}>
+          <div className="filter-grid">
+            <div className="filter-item">
+              <label htmlFor="filter-reviewer-name" className="filter-label">Search Customer Name</label>
+              <input
+                id="filter-reviewer-name"
+                name="name"
+                type="text"
+                placeholder="Search customer name…"
+                value={filters.name}
+                onChange={handleFilterChange}
+                className="form-input form-input--sm"
+              />
+            </div>
+
+            <div className="filter-item">
+              <label htmlFor="filter-reviewer-email" className="filter-label">Search Customer Email</label>
+              <input
+                id="filter-reviewer-email"
+                name="email"
+                type="text"
+                placeholder="Search email…"
+                value={filters.email}
+                onChange={handleFilterChange}
+                className="form-input form-input--sm"
+              />
+            </div>
+          </div>
+
+          {(filters.name || filters.email) && (
+            <div className="filter-actions">
+              <button
+                type="button"
+                className="btn btn--outline btn--sm"
+                onClick={handleResetFilters}
+              >
+                ✕ Clear Search
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="table-wrapper">
@@ -327,7 +402,7 @@ const OwnerDashboard = () => {
               ) : ratings.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="table-empty">
-                    <p>No customer reviews received yet.</p>
+                    <p>{filters.name || filters.email ? 'No reviews matched your search criteria.' : 'No customer ratings yet.'}</p>
                   </td>
                 </tr>
               ) : (

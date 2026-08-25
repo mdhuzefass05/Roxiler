@@ -223,10 +223,27 @@ export const getMyStoreRatings = async (ownerId, queryParams = {}) => {
   const sortColumn = RATING_SORT_MAP[rawSort] || 'r.created_at';
   const orderClause = `ORDER BY ${sortColumn} ${order}`;
 
+  const conditions = [];
+  const params = [];
+
+  if (queryParams.name && queryParams.name.trim()) {
+    params.push(`%${queryParams.name.trim()}%`);
+    conditions.push(`u.name ILIKE $${params.length + 1}`);
+  }
+
+  if (queryParams.email && queryParams.email.trim()) {
+    params.push(`%${queryParams.email.trim()}%`);
+    conditions.push(`u.email ILIKE $${params.length + 1}`);
+  }
+
+  const whereClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
+
   const [total, rows] = await Promise.all([
-    ratingModel.countStoreRatings(storeId),
+    ratingModel.countStoreRatings({ storeId, whereClause, params }),
     ratingModel.findStoreRatingsPaginated({
       storeId,
+      whereClause,
+      params,
       orderClause,
       limit,
       offset,

@@ -62,14 +62,20 @@ export const getRatingDistribution = async (storeId) => {
 };
 
 /**
- * Find ratings for a store with server-side sorting and pagination.
+ * Find ratings for a store with server-side filtering, sorting, and pagination.
  */
 export const findStoreRatingsPaginated = async ({
   storeId,
+  whereClause = '',
+  params = [],
   orderClause = 'ORDER BY r.created_at DESC',
   limit = 10,
   offset = 0,
 }) => {
+  const p = [storeId, ...params, limit, offset];
+  const limitIdx = p.length - 1;
+  const offsetIdx = p.length;
+
   const { rows } = await query(
     `SELECT
        r.id,
@@ -84,20 +90,26 @@ export const findStoreRatingsPaginated = async ({
      FROM ratings r
      JOIN users u ON u.id = r.user_id
      WHERE r.store_id = $1
+     ${whereClause}
      ${orderClause}
-     LIMIT $2 OFFSET $3`,
-    [storeId, limit, offset]
+     LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    p
   );
   return rows;
 };
 
 /**
- * Count total ratings for a store.
+ * Count total ratings for a store (with optional WHERE filter).
  */
-export const countStoreRatings = async (storeId) => {
+export const countStoreRatings = async ({ storeId, whereClause = '', params = [] } = {}) => {
+  const p = [storeId, ...params];
   const { rows } = await query(
-    'SELECT COUNT(*)::INTEGER AS total FROM ratings WHERE store_id = $1',
-    [storeId]
+    `SELECT COUNT(*)::INTEGER AS total
+     FROM ratings r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.store_id = $1
+     ${whereClause}`,
+    p
   );
   return rows[0]?.total || 0;
 };
