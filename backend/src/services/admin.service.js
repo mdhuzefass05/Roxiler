@@ -5,10 +5,10 @@ import { query } from '../database/index.js';
  */
 
 /**
- * Retrieve real-time platform statistics, leaderboards, and recent activity feeds.
+ * Retrieve real-time platform statistics, health metrics, category distribution, leaderboards, and recent activity feeds.
  */
 export const getDashboardStats = async () => {
-  const [statsRes, topStoresRes, recentRatingsRes, recentUsersRes] = await Promise.all([
+  const [statsRes, topStoresRes, recentRatingsRes, recentUsersRes, categoriesRes] = await Promise.all([
     query(`
       SELECT
         (SELECT COUNT(*)::INTEGER FROM users)                            AS total_users,
@@ -16,7 +16,10 @@ export const getDashboardStats = async () => {
         (SELECT COUNT(*)::INTEGER FROM ratings)                          AS total_ratings,
         (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'NORMAL_USER') AS total_normal_users,
         (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'STORE_OWNER') AS total_store_owners,
-        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'SYSTEM_ADMIN') AS total_admin_users
+        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'SYSTEM_ADMIN') AS total_admin_users,
+        (SELECT COALESCE(ROUND(AVG(rating_value)::NUMERIC, 2), 0.00) FROM ratings) AS platform_avg_rating,
+        (SELECT COUNT(*)::INTEGER FROM ratings WHERE rating_value = 5)   AS five_star_ratings,
+        (SELECT COUNT(DISTINCT store_id)::INTEGER FROM ratings)          AS active_stores_rated
     `),
     query(`
       SELECT
@@ -45,7 +48,7 @@ export const getDashboardStats = async () => {
       JOIN users u ON u.id = r.user_id
       JOIN stores s ON s.id = r.store_id
       ORDER BY r.created_at DESC
-      LIMIT 5
+      LIMIT 6
     `),
     query(`
       SELECT
@@ -56,7 +59,15 @@ export const getDashboardStats = async () => {
         created_at
       FROM users
       ORDER BY created_at DESC
-      LIMIT 5
+      LIMIT 6
+    `),
+    query(`
+      SELECT
+        COALESCE(category, 'General') AS category,
+        COUNT(*)::INTEGER AS count
+      FROM stores
+      GROUP BY category
+      ORDER BY count DESC
     `),
   ]);
 
@@ -67,6 +78,9 @@ export const getDashboardStats = async () => {
     total_normal_users: 0,
     total_store_owners: 0,
     total_admin_users: 0,
+    platform_avg_rating: 0.0,
+    five_star_ratings: 0,
+    active_stores_rated: 0,
   };
 
   const parsedCounts = {
@@ -76,6 +90,9 @@ export const getDashboardStats = async () => {
     total_normal_users: parseInt(stats.total_normal_users || 0, 10),
     total_store_owners: parseInt(stats.total_store_owners || 0, 10),
     total_admin_users: parseInt(stats.total_admin_users || 0, 10),
+    platform_avg_rating: parseFloat(stats.platform_avg_rating || 0),
+    five_star_ratings: parseInt(stats.five_star_ratings || 0, 10),
+    active_stores_rated: parseInt(stats.active_stores_rated || 0, 10),
   };
 
   return {
@@ -100,5 +117,9 @@ export const getDashboardStats = async () => {
       store_name: row.store_name,
     })),
     recent_users: recentUsersRes.rows,
+    category_distribution: categoriesRes.rows.map((row) => ({
+      category: row.category,
+      count: parseInt(row.count, 10),
+    })),
   };
 };

@@ -32,6 +32,23 @@ const timeAgo = (dateStr) => {
   return `${diffDays} days ago`;
 };
 
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case 'Tech & Electronics':
+      return '⚡';
+    case 'Grocery & Mart':
+      return '🥑';
+    case 'Fashion & Boutique':
+      return '👗';
+    case 'Cafe & Dining':
+      return '☕';
+    case 'Services & Wellness':
+      return '🌿';
+    default:
+      return '🏬';
+  }
+};
+
 const AdminDashboard = () => {
   const { user } = useAuth();
   const toast = useToast();
@@ -108,9 +125,28 @@ const AdminDashboard = () => {
     total_normal_users: stats?.counts?.total_normal_users ?? stats?.total_normal_users ?? 0,
     total_store_owners: stats?.counts?.total_store_owners ?? stats?.total_store_owners ?? 0,
     total_admin_users: stats?.counts?.total_admin_users ?? stats?.total_admin_users ?? 0,
+    platform_avg_rating: stats?.platform_avg_rating ?? stats?.counts?.platform_avg_rating ?? 0.0,
+    five_star_ratings: stats?.five_star_ratings ?? stats?.counts?.five_star_ratings ?? 0,
+    active_stores_rated: stats?.active_stores_rated ?? stats?.counts?.active_stores_rated ?? 0,
   };
+
   const topStores = stats?.top_stores || [];
   const recentRatings = stats?.recent_ratings || [];
+  const recentUsers = stats?.recent_users || [];
+  const categoryDistribution = stats?.category_distribution || [];
+
+  const totalUsersCount = counts.total_users || 1;
+  const normalUserPct = Math.round((counts.total_normal_users / totalUsersCount) * 100);
+  const storeOwnerPct = Math.round((counts.total_store_owners / totalUsersCount) * 100);
+  const adminUserPct = Math.round((counts.total_admin_users / totalUsersCount) * 100);
+
+  const fiveStarPercent = counts.total_ratings > 0
+    ? Math.round((counts.five_star_ratings / counts.total_ratings) * 100)
+    : 0;
+
+  const storeCoveragePercent = counts.total_stores > 0
+    ? Math.round((counts.active_stores_rated / counts.total_stores) * 100)
+    : 0;
 
   return (
     <main className="dashboard-page">
@@ -118,9 +154,9 @@ const AdminDashboard = () => {
       <div className="dashboard__header-wrapper">
         <div>
           <div className="dashboard__role-tag">SYSTEM ADMINISTRATOR</div>
-          <h1>Platform Operations</h1>
+          <h1>Platform Operations Command Center</h1>
           <p>
-            Welcome, <strong>{user?.name}</strong>! High-level performance metrics, directory control, and activity streams.
+            Welcome, <strong>{user?.name}</strong>! High-level performance metrics, user analytics, and system oversight.
           </p>
         </div>
         <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -174,7 +210,7 @@ const AdminDashboard = () => {
       )}
 
       {/* ── Key Performance Cards ─────────────────────────────────────── */}
-      <div className="dashboard__stats-grid">
+      <div className="dashboard__stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
         {/* Total Users */}
         <div className="stat-card stat-card--users">
           <div className="stat-card__top">
@@ -183,7 +219,11 @@ const AdminDashboard = () => {
           </div>
           <h3>Registered Users</h3>
           <p className="stat-card__value">{counts.total_users}</p>
-          <div className="stat-card__footer-link">
+          <div className="stat-card__breakdown">
+            <span>🛍️ {counts.total_normal_users} Shoppers</span>
+            <span>🏬 {counts.total_store_owners} Store Owners</span>
+          </div>
+          <div className="stat-card__footer-link" style={{ marginTop: '0.5rem' }}>
             <Link to={ROUTES.ADMIN_USERS}>Manage user directory →</Link>
           </div>
         </div>
@@ -196,7 +236,11 @@ const AdminDashboard = () => {
           </div>
           <h3>Registered Stores</h3>
           <p className="stat-card__value">{counts.total_stores}</p>
-          <div className="stat-card__footer-link">
+          <div className="stat-card__breakdown">
+            <span>🟢 {counts.active_stores_rated} Stores with Reviews</span>
+            <span>📍 {storeCoveragePercent}% Review Coverage</span>
+          </div>
+          <div className="stat-card__footer-link" style={{ marginTop: '0.5rem' }}>
             <Link to={ROUTES.ADMIN_STORES}>Manage store directory →</Link>
           </div>
         </div>
@@ -204,25 +248,126 @@ const AdminDashboard = () => {
         {/* Total Ratings */}
         <div className="stat-card stat-card--ratings">
           <div className="stat-card__top">
-            <span className="stat-card__icon" aria-hidden="true">⭐</span>
+            <span className="stat-card__icon" aria-hidden="true">💬</span>
             <span className="stat-card__tag">Feedback Volume</span>
           </div>
-          <h3>Total Ratings Submitted</h3>
+          <h3>Total Reviews</h3>
           <p className="stat-card__value">{counts.total_ratings}</p>
-          <div className="stat-card__footer-link">
+          <div className="stat-card__breakdown">
+            <span>⭐ {counts.five_star_ratings} Five-Star Ratings</span>
+            <span>🔥 {fiveStarPercent}% Top-Tier Satisfaction</span>
+          </div>
+          <div className="stat-card__footer-link" style={{ marginTop: '0.5rem' }}>
             <span>Aggregated across all stores</span>
+          </div>
+        </div>
+
+        {/* Platform Quality Index */}
+        <div className="stat-card stat-card--ratings">
+          <div className="stat-card__top">
+            <span className="stat-card__icon" aria-hidden="true">⭐</span>
+            <span className="stat-card__tag">Quality Index</span>
+          </div>
+          <h3>Platform Avg Rating</h3>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+            <p className="stat-card__value" style={{ color: getRatingColor(counts.platform_avg_rating) }}>
+              {counts.platform_avg_rating > 0 ? Number(counts.platform_avg_rating).toFixed(1) : '0.0'}
+            </p>
+            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-muted)' }}>/ 5.0</span>
+          </div>
+          <div style={{ marginTop: '0.25rem' }}>
+            <StarRating value={counts.platform_avg_rating} size="sm" />
+          </div>
+          <div className="stat-card__footer-link" style={{ marginTop: '0.5rem' }}>
+            <span>Platform-wide satisfaction</span>
           </div>
         </div>
       </div>
 
-      {/* ── Quick Data Export Hub ─────────────────────────────────────── */}
+      {/* ── Analytical Visual Breakdowns (Row 2) ───────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+        {/* User Demographics & Persona Breakdown */}
+        <section className="filter-panel" style={{ margin: 0 }}>
+          <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+            <h2>👥 User Demographics & Personas</h2>
+            <p>Distribution of registered user roles across the platform</p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Multi-segment Progress Bar */}
+            <div style={{ height: '14px', borderRadius: '10px', overflow: 'hidden', display: 'flex', background: 'var(--color-input-bg)', boxShadow: 'var(--shadow-clay-pressed)' }}>
+              <div style={{ width: `${normalUserPct}%`, background: 'var(--gradient-primary)' }} title={`Shoppers: ${normalUserPct}%`} />
+              <div style={{ width: `${storeOwnerPct}%`, background: 'var(--gradient-secondary)' }} title={`Store Owners: ${storeOwnerPct}%`} />
+              <div style={{ width: `${adminUserPct}%`, background: 'var(--gradient-amber)' }} title={`Admins: ${adminUserPct}%`} />
+            </div>
+
+            {/* Persona Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ padding: '0.85rem', background: 'var(--color-input-bg)', boxShadow: 'var(--shadow-clay-pressed)', borderRadius: '16px', textAlign: 'center' }}>
+                <span style={{ fontSize: '1.4rem', display: 'block', marginBottom: '0.2rem' }}>🛍️</span>
+                <strong style={{ display: 'block', fontSize: '1.1rem' }}>{counts.total_normal_users}</strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 700 }}>Shoppers ({normalUserPct}%)</span>
+              </div>
+
+              <div style={{ padding: '0.85rem', background: 'var(--color-input-bg)', boxShadow: 'var(--shadow-clay-pressed)', borderRadius: '16px', textAlign: 'center' }}>
+                <span style={{ fontSize: '1.4rem', display: 'block', marginBottom: '0.2rem' }}>🏬</span>
+                <strong style={{ display: 'block', fontSize: '1.1rem' }}>{counts.total_store_owners}</strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 700 }}>Owners ({storeOwnerPct}%)</span>
+              </div>
+
+              <div style={{ padding: '0.85rem', background: 'var(--color-input-bg)', boxShadow: 'var(--shadow-clay-pressed)', borderRadius: '16px', textAlign: 'center' }}>
+                <span style={{ fontSize: '1.4rem', display: 'block', marginBottom: '0.2rem' }}>👑</span>
+                <strong style={{ display: 'block', fontSize: '1.1rem' }}>{counts.total_admin_users}</strong>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 700 }}>Admins ({adminUserPct}%)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Store Category Distribution */}
+        <section className="filter-panel" style={{ margin: 0 }}>
+          <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+            <h2>🏬 Industry & Category Distribution</h2>
+            <p>Catalog breakdown by commercial retail vertical</p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {categoryDistribution.length === 0 ? (
+              <p className="text-muted">No category data available.</p>
+            ) : (
+              categoryDistribution.map((cat) => {
+                const pct = counts.total_stores > 0 ? Math.round((cat.count / counts.total_stores) * 100) : 0;
+                return (
+                  <div key={cat.category} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 800 }}>
+                      <span>{getCategoryIcon(cat.category)} {cat.category}</span>
+                      <span>{cat.count} {cat.count === 1 ? 'store' : 'stores'} ({pct}%)</span>
+                    </div>
+                    <div style={{ height: '8px', borderRadius: '8px', overflow: 'hidden', background: 'var(--color-input-bg)', boxShadow: 'var(--shadow-clay-pressed)' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gradient-primary)', borderRadius: '8px' }} />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* ── Quick Data Export & Action Hub ────────────────────────────── */}
       <section className="filter-panel" style={{ marginTop: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>📥 Data Export Hub</h3>
-            <p className="text-muted" style={{ fontSize: '0.9rem' }}>Download platform registers as CSV spreadsheets.</p>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>⚡ Executive Action & Data Hub</h3>
+            <p className="text-muted" style={{ fontSize: '0.9rem' }}>Fast management shortcuts and catalog data exports.</p>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <Link to={ROUTES.ADMIN_STORES} className="btn btn--primary btn--sm" style={{ textDecoration: 'none' }}>
+              + Register Store
+            </Link>
+            <Link to={ROUTES.ADMIN_USERS} className="btn btn--secondary btn--sm" style={{ textDecoration: 'none' }}>
+              + Onboard User
+            </Link>
             <Button variant="outline" size="sm" onClick={handleExportUsers} loading={exportLoading}>
               👥 Export Users CSV
             </Button>
@@ -233,13 +378,13 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* ── Top Stores & Recent Activity Grids ────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
-        {/* Top 5 Rated Stores Leaderboard */}
+      {/* ── Triple Live Activity Feeds ─────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+        {/* 1. Top 5 Rated Stores Leaderboard */}
         <section className="filter-panel" style={{ margin: 0 }}>
           <div className="section-header" style={{ marginBottom: '1.25rem' }}>
             <h2>🏆 Top Rated Stores</h2>
-            <p>Businesses with the highest average customer satisfaction</p>
+            <p>Highest customer satisfaction ratings</p>
           </div>
 
           {loading ? (
@@ -290,7 +435,7 @@ const AdminDashboard = () => {
           )}
         </section>
 
-        {/* Live Ratings Feed with Relative Timestamps */}
+        {/* 2. Live Ratings Feed with Relative Timestamps */}
         <section className="filter-panel" style={{ margin: 0 }}>
           <div className="section-header" style={{ marginBottom: '1.25rem' }}>
             <h2>⚡ Recent Customer Ratings</h2>
@@ -338,6 +483,60 @@ const AdminDashboard = () => {
                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 700 }}>
                       🕒 {timeAgo(r.created_at)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 3. Newest User Registrations Feed */}
+        <section className="filter-panel" style={{ margin: 0 }}>
+          <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+            <h2>👤 Newest Members</h2>
+            <p>Recent user and business registrations</p>
+          </div>
+
+          {loading ? (
+            <div className="spinner-wrapper" style={{ padding: '2rem' }}>
+              <span className="spinner" />
+            </div>
+          ) : recentUsers.length === 0 ? (
+            <p className="text-muted">No recent users found.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {recentUsers.map((u) => (
+                <div
+                  key={u.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.85rem 1rem',
+                    background: 'var(--color-input-bg)',
+                    boxShadow: 'var(--shadow-clay-pressed)',
+                    borderRadius: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img
+                      src={getUserAvatar(u.id || u.email || u.name)}
+                      alt=""
+                      className="user-avatar-photo"
+                      style={{ width: '2rem', height: '2rem' }}
+                    />
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '0.9rem' }}>{u.name}</strong>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>{u.email}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
+                    <span className={`badge ${u.role === 'SYSTEM_ADMIN' ? 'badge--admin' : u.role === 'STORE_OWNER' ? 'badge--owner' : 'badge--user'}`} style={{ fontSize: '0.65rem' }}>
+                      {u.role?.replace('_', ' ')}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 700 }}>
+                      {timeAgo(u.created_at)}
                     </span>
                   </div>
                 </div>
