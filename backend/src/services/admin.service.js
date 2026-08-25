@@ -48,7 +48,7 @@ export const getDashboardStats = async () => {
       JOIN users u ON u.id = r.user_id
       JOIN stores s ON s.id = r.store_id
       ORDER BY r.created_at DESC
-      LIMIT 6
+      LIMIT 5
     `),
     query(`
       SELECT
@@ -59,7 +59,7 @@ export const getDashboardStats = async () => {
         created_at
       FROM users
       ORDER BY created_at DESC
-      LIMIT 6
+      LIMIT 5
     `),
     query(`
       SELECT

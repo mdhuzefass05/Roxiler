@@ -129,9 +129,9 @@ const AdminDashboard = () => {
     active_stores_rated: stats?.active_stores_rated ?? stats?.counts?.active_stores_rated ?? 0,
   };
 
-  const topStores = stats?.top_stores || [];
-  const recentRatings = stats?.recent_ratings || [];
-  const recentUsers = stats?.recent_users || [];
+  const topStores = (stats?.top_stores || []).slice(0, 5);
+  const recentRatings = (stats?.recent_ratings || []).slice(0, 5);
+  const recentUsers = (stats?.recent_users || []).slice(0, 5);
   const categoryDistribution = stats?.category_distribution || [];
 
   const fiveStarPercent = counts.total_ratings > 0
@@ -326,11 +326,11 @@ const AdminDashboard = () => {
       </section>
 
       {/* ── Triple Live Activity Feeds ─────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginTop: '2rem' }}>
         {/* 1. Top 5 Rated Stores Leaderboard */}
-        <section className="filter-panel" style={{ margin: 0 }}>
+        <section className="filter-panel" style={{ margin: 0, overflow: 'hidden' }}>
           <div className="section-header" style={{ marginBottom: '1.25rem' }}>
-            <h2>🏆 Top Rated Stores</h2>
+            <h2>🏆 Top 5 Rated Stores</h2>
             <p>Highest customer satisfaction ratings</p>
           </div>
 
@@ -347,34 +347,56 @@ const AdminDashboard = () => {
                   key={s.id}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    flexDirection: 'column',
+                    gap: '0.45rem',
                     padding: '0.85rem 1rem',
                     background: 'var(--color-input-bg)',
                     boxShadow: 'var(--shadow-clay-pressed)',
                     borderRadius: '16px',
+                    overflow: 'hidden',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontSize: '1.2rem', fontWeight: 900, width: '1.5rem', textAlign: 'center' }}>
+                  {/* Top Row: Medal + Photo + Name & Category */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 900, flexShrink: 0, width: '1.5rem', textAlign: 'center' }}>
                       {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                     </span>
                     <img
                       src={getStorePhoto(s.name, s.category)}
                       alt=""
                       className="store-thumb-photo"
-                      style={{ width: '2.5rem', height: '2.5rem', borderRadius: '12px' }}
+                      style={{ width: '2.25rem', height: '2.25rem', borderRadius: '10px', flexShrink: 0, objectFit: 'cover' }}
                     />
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '0.95rem' }}>{s.name}</strong>
-                      <span className="badge badge--user" style={{ fontSize: '0.7rem' }}>{s.category || 'General'}</span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <strong
+                        style={{
+                          display: 'block',
+                          fontSize: '0.9rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={s.name}
+                      >
+                        {s.name}
+                      </strong>
+                      <span className="badge badge--user" style={{ fontSize: '0.65rem', padding: '0.1rem 0.45rem' }}>
+                        {s.category || 'General'}
+                      </span>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <StarRating value={s.average_rating} size="sm" />
-                    <strong style={{ color: getRatingColor(s.average_rating) }}>
-                      {s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'}
-                    </strong>
+
+                  {/* Bottom Row: Full Star Rating + Score */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--color-border)', paddingTop: '0.4rem', marginTop: '0.1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <StarRating value={s.average_rating} size="sm" />
+                      <strong style={{ color: getRatingColor(s.average_rating), fontSize: '0.88rem' }}>
+                        {s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'} ★
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 700 }}>
+                      {s.total_ratings} {s.total_ratings === 1 ? 'review' : 'reviews'}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -382,11 +404,11 @@ const AdminDashboard = () => {
           )}
         </section>
 
-        {/* 2. Live Ratings Feed with Relative Timestamps */}
-        <section className="filter-panel" style={{ margin: 0 }}>
+        {/* 2. Top 5 Recent Customer Ratings */}
+        <section className="filter-panel" style={{ margin: 0, overflow: 'hidden' }}>
           <div className="section-header" style={{ marginBottom: '1.25rem' }}>
-            <h2>⚡ Recent Customer Ratings</h2>
-            <p>Live stream of reviews submitted across the platform</p>
+            <h2>⚡ Recent 5 Customer Ratings</h2>
+            <p>Live stream of latest reviews platform-wide</p>
           </div>
 
           {loading ? (
@@ -405,30 +427,79 @@ const AdminDashboard = () => {
                     background: 'var(--color-input-bg)',
                     boxShadow: 'var(--shadow-clay-pressed)',
                     borderRadius: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem',
+                    overflow: 'hidden',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Top Row: User Avatar + Name (truncated) + Star Rating */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
                       <img
                         src={getUserAvatar(r.user_name || r.user_id)}
                         alt=""
                         className="user-avatar-photo"
-                        style={{ width: '2rem', height: '2rem' }}
+                        style={{ width: '1.9rem', height: '1.9rem', flexShrink: 0 }}
                       />
-                      <strong>{r.user_name} → {r.store_name}</strong>
+                      <strong
+                        style={{
+                          fontSize: '0.88rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={r.user_name}
+                      >
+                        {r.user_name}
+                      </strong>
                     </div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <StarRating value={r.rating_value} size="sm" />
-                      <strong style={{ color: getRatingColor(r.rating_value) }}>{r.rating_value} ★</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                      <StarRating value={r.rating_value} size="xs" />
+                      <strong style={{ color: getRatingColor(r.rating_value), fontSize: '0.85rem' }}>
+                        {r.rating_value} ★
+                      </strong>
                     </div>
                   </div>
+
+                  {/* Store Target Pill */}
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--color-muted)',
+                      fontWeight: 700,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title={r.store_name}
+                  >
+                    🏪 <span style={{ color: 'var(--color-foreground)' }}>{r.store_name}</span>
+                  </div>
+
+                  {/* Review Commentary */}
                   {r.comment && (
-                    <p style={{ fontSize: '0.85rem', fontStyle: 'italic', margin: '0.25rem 0', color: 'var(--color-foreground)', paddingLeft: '2.5rem' }}>
+                    <p
+                      style={{
+                        fontSize: '0.82rem',
+                        fontStyle: 'italic',
+                        margin: 0,
+                        color: 'var(--color-foreground)',
+                        lineHeight: 1.35,
+                        display: '-webkit-box',
+                        WebKitLineClamp: 2,
+                        WebKitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                      title={r.comment}
+                    >
                       &ldquo;{r.comment}&rdquo;
                     </p>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 700 }}>
+
+                  {/* Timestamp */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--color-border)', paddingTop: '0.3rem', marginTop: '0.1rem' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-muted)', fontWeight: 700 }}>
                       🕒 {timeAgo(r.created_at)}
                     </span>
                   </div>
@@ -438,10 +509,10 @@ const AdminDashboard = () => {
           )}
         </section>
 
-        {/* 3. Newest User Registrations Feed */}
-        <section className="filter-panel" style={{ margin: 0 }}>
+        {/* 3. Top 5 Newest Members */}
+        <section className="filter-panel" style={{ margin: 0, overflow: 'hidden' }}>
           <div className="section-header" style={{ marginBottom: '1.25rem' }}>
-            <h2>👤 Newest Members</h2>
+            <h2>👤 Newest 5 Members</h2>
             <p>Recent user and business registrations</p>
           </div>
 
@@ -457,33 +528,65 @@ const AdminDashboard = () => {
                 <div
                   key={u.id}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
                     padding: '0.85rem 1rem',
                     background: 'var(--color-input-bg)',
                     boxShadow: 'var(--shadow-clay-pressed)',
                     borderRadius: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.4rem',
+                    overflow: 'hidden',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <img
-                      src={getUserAvatar(u.id || u.email || u.name)}
-                      alt=""
-                      className="user-avatar-photo"
-                      style={{ width: '2rem', height: '2rem' }}
-                    />
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '0.9rem' }}>{u.name}</strong>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>{u.email}</span>
+                  {/* Top Row: User Avatar + Name & Email + Role Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                      <img
+                        src={getUserAvatar(u.id || u.email || u.name)}
+                        alt=""
+                        className="user-avatar-photo"
+                        style={{ width: '2rem', height: '2rem', flexShrink: 0 }}
+                      />
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <strong
+                          style={{
+                            display: 'block',
+                            fontSize: '0.88rem',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={u.name}
+                        >
+                          {u.name}
+                        </strong>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: '0.75rem',
+                            color: 'var(--color-muted)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                          title={u.email}
+                        >
+                          {u.email}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
-                    <span className={`badge ${u.role === 'SYSTEM_ADMIN' ? 'badge--admin' : u.role === 'STORE_OWNER' ? 'badge--owner' : 'badge--user'}`} style={{ fontSize: '0.65rem' }}>
+                    <span
+                      className={`badge ${u.role === 'SYSTEM_ADMIN' ? 'badge--admin' : u.role === 'STORE_OWNER' ? 'badge--owner' : 'badge--user'}`}
+                      style={{ fontSize: '0.65rem', flexShrink: 0, padding: '0.2rem 0.5rem' }}
+                    >
                       {u.role?.replace('_', ' ')}
                     </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 700 }}>
-                      {timeAgo(u.created_at)}
+                  </div>
+
+                  {/* Joined Timestamp */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--color-border)', paddingTop: '0.3rem' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-muted)', fontWeight: 700 }}>
+                      🕒 Joined {timeAgo(u.created_at)}
                     </span>
                   </div>
                 </div>
