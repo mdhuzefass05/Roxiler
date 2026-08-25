@@ -7,8 +7,14 @@
  */
 import axios from 'axios';
 
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
+  if (!envUrl) return '/api/v1';
+  return envUrl;
+};
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  baseURL: getBaseURL(),
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

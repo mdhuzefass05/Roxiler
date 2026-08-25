@@ -42,8 +42,9 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// ── API v1 Routes (general rate limiter applied) ──────────────────────────────
+// ── API Routes (general rate limiter applied) ─────────────────────────────────
 app.use('/api/v1', generalLimiter, v1Router);
+app.use('/api', generalLimiter, v1Router);
 
 // ── 404 — Unmatched Routes ────────────────────────────────────────────────────
 app.use(notFoundMiddleware);
