@@ -7,6 +7,7 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 
 const RATING_LABELS = {
   1: '1 Star — Poor',
@@ -44,6 +45,7 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [feedbackMsg, setFeedbackMsg] = useState(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // ── Rating Modal State ─────────────────────────────────────────────
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
@@ -200,6 +202,15 @@ const UserDashboard = () => {
           <p>
             Welcome, <strong>{user?.name}</strong>! Discover local stores and share your authentic ratings.
           </p>
+        </div>
+        <div className="dashboard__actions">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPasswordModalOpen(true)}
+          >
+            🔒 Change Password
+          </Button>
         </div>
       </div>
 
@@ -444,6 +455,12 @@ const UserDashboard = () => {
           </form>
         )}
       </Modal>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </main>
   );
 };

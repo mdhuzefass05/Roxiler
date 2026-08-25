@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { getAdminStatsApi } from '../../api/admin.api';
 import Button from '../../components/common/Button';
+import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import { ROUTES } from '../../utils/constants';
 
 /**
@@ -15,6 +16,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const fetchStats = useCallback(async () => {
     setLoading(true);
@@ -48,7 +50,14 @@ const AdminDashboard = () => {
             Welcome, <strong>{user?.name}</strong>. Here is the real-time activity and platform summary.
           </p>
         </div>
-        <div className="dashboard__actions">
+        <div className="dashboard__actions" style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPasswordModalOpen(true)}
+          >
+            🔒 Change Password
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -156,6 +165,12 @@ const AdminDashboard = () => {
           </div>
         </div>
       </section>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </main>
   );
 };
