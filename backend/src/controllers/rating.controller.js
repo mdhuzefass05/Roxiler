@@ -12,7 +12,11 @@ import asyncHandler from '../utils/asyncHandler.js';
  */
 export const submitRating = asyncHandler(async (req, res) => {
   const rating = await ratingService.submitRating(req.user.id, req.body);
-  return sendSuccess(res, { data: rating, message: 'Rating submitted successfully.', status: 201 });
+  return sendSuccess(res, {
+    data: rating,
+    message: 'Rating submitted successfully.',
+    status: 201,
+  });
 });
 
 /**
@@ -20,12 +24,16 @@ export const submitRating = asyncHandler(async (req, res) => {
  * NORMAL_USER only — update their existing rating.
  */
 export const updateRating = asyncHandler(async (req, res) => {
+  const ratingValue = req.body.rating_value !== undefined ? req.body.rating_value : req.body.rating;
   const rating = await ratingService.updateRating(
     req.user.id,
     req.params.storeId,
-    req.body.rating
+    ratingValue
   );
-  return sendSuccess(res, { data: rating, message: 'Rating updated successfully.' });
+  return sendSuccess(res, {
+    data: rating,
+    message: 'Rating updated successfully.',
+  });
 });
 
 /**
@@ -34,5 +42,8 @@ export const updateRating = asyncHandler(async (req, res) => {
  */
 export const getRatingsByStore = asyncHandler(async (req, res) => {
   const ratings = await ratingService.getRatingsByStore(req.params.storeId);
-  return sendSuccess(res, { data: ratings, message: 'Ratings retrieved successfully.' });
+  return sendSuccess(res, {
+    data: ratings,
+    message: 'Ratings retrieved successfully.',
+  });
 });
