@@ -177,6 +177,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- Efficient aggregate view — services query this instead of writing
 -- inline JOINs + AVG for every store-listing endpoint.
 -- ================================================================
+DROP VIEW IF EXISTS store_ratings_summary CASCADE;
 CREATE OR REPLACE VIEW store_ratings_summary AS
 SELECT
   s.id                                                            AS store_id,
