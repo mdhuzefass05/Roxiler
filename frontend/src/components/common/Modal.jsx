@@ -23,14 +23,14 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = '550px' }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div
         className="modal-content"
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h2>{title}</h2>
+          <h2 id="modal-title">{title}</h2>
           <button
             type="button"
             className="modal-close-btn"

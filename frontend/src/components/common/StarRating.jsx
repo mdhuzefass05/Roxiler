@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 /**
- * StarRating — visual star display component.
+ * StarRating — accessible visual star display and input component.
  *
  * Supports readonly mode (for displaying overall/average ratings with decimals)
- * and interactive mode with hover previews (for submitting/modifying ratings 1 to 5).
+ * and interactive mode with full keyboard navigation (Left/Right arrow, Space, Enter, 1-5 keys).
  */
 const StarRating = ({
   value = 0,
@@ -25,40 +25,68 @@ const StarRating = ({
     }
   };
 
-  const handleMouseEnter = (starIndex) => {
-    if (interactive) {
-      setHoverValue(starIndex);
-    }
-  };
+  const handleKeyDown = (e, starIndex) => {
+    if (!interactive || !onChange) return;
 
-  const handleMouseLeave = () => {
-    if (interactive) {
-      setHoverValue(null);
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onChange(starIndex);
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = Math.min(max, starIndex + 1);
+      onChange(next);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const prev = Math.max(1, starIndex - 1);
+      onChange(prev);
     }
   };
 
   return (
-    <div className={`star-rating star-rating--${size} ${interactive ? 'star-rating--interactive' : ''}`}>
+    <div
+      className={`star-rating star-rating--${size} ${interactive ? 'star-rating--interactive' : ''}`}
+      role={interactive ? 'radiogroup' : 'img'}
+      aria-label={
+        interactive
+          ? 'Star Rating Selection'
+          : `Rating: ${numericValue > 0 ? numericValue.toFixed(1) : 0} out of ${max}`
+      }
+    >
       <div
         className="star-rating__stars"
-        onMouseLeave={handleMouseLeave}
-        aria-label={`Rating: ${numericValue} out of ${max}`}
+        onMouseLeave={() => interactive && setHoverValue(null)}
       >
         {Array.from({ length: max }, (_, index) => {
           const starNumber = index + 1;
           const isFilled = starNumber <= Math.round(activeRating);
+          const isChecked = starNumber === Math.round(numericValue);
+
+          if (!interactive) {
+            return (
+              <span
+                key={index}
+                className={`star-btn ${isFilled ? 'star-btn--filled' : 'star-btn--empty'}`}
+                aria-hidden="true"
+              >
+                ★
+              </span>
+            );
+          }
 
           return (
             <button
               key={index}
               type="button"
+              role="radio"
+              aria-checked={isChecked}
+              aria-label={`${starNumber} star${starNumber > 1 ? 's' : ''}`}
               className={`star-btn ${isFilled ? 'star-btn--filled' : 'star-btn--empty'} ${
                 hoverValue !== null && starNumber <= hoverValue ? 'star-btn--hovered' : ''
               }`}
-              disabled={!interactive}
               onClick={() => handleStarClick(starNumber)}
-              onMouseEnter={() => handleMouseEnter(starNumber)}
-              title={interactive ? `Rate ${starNumber} star${starNumber > 1 ? 's' : ''}` : undefined}
+              onMouseEnter={() => setHoverValue(starNumber)}
+              onKeyDown={(e) => handleKeyDown(e, starNumber)}
+              tabIndex={0}
             >
               ★
             </button>
