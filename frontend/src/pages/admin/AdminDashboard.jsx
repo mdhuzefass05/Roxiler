@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { getAdminStatsApi } from '../../api/admin.api';
 import Button from '../../components/common/Button';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
-import { ROUTES } from '../../utils/constants';
 
 /**
  * System Administrator Dashboard
@@ -128,43 +126,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Admin Quick Action Navigation Hub */}
-      <section className="admin-quick-hub">
-        <div className="section-header">
-          <h2>Administrative Management</h2>
-          <p>Quick access to platform management tools</p>
-        </div>
-
-        <div className="admin-quick-grid">
-          <div className="quick-action-card">
-            <div className="quick-action-card__icon">👤</div>
-            <h3>User Management</h3>
-            <p>View all users, filter by role or name, inspect user details, and add new users.</p>
-            <Link to={ROUTES.ADMIN_USERS} className="btn btn--outline btn--sm">
-              Manage Users →
-            </Link>
-          </div>
-
-          <div className="quick-action-card">
-            <div className="quick-action-card__icon">🏬</div>
-            <h3>Store Management</h3>
-            <p>Create stores, assign store owners, view ratings, and sort stores by rating.</p>
-            <Link to={ROUTES.ADMIN_STORES} className="btn btn--outline btn--sm">
-              Manage Stores →
-            </Link>
-          </div>
-
-          <div className="quick-action-card">
-            <div className="quick-action-card__icon">⭐</div>
-            <h3>Live Store Browser</h3>
-            <p>Explore the store catalog and check how stores appear to normal customers.</p>
-            <Link to={ROUTES.STORES} className="btn btn--outline btn--sm">
-              Browse Stores →
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Change Password Modal */}
       <ChangePasswordModal
