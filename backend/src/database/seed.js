@@ -28,7 +28,7 @@ import { getClient }     from './index.js';
 
 // ── Seed Data Definitions ─────────────────────────────────────────────────────
 
-const BCRYPT_ROUNDS = 10;
+const BCRYPT_ROUNDS = 12;
 
 const SEED_USERS = [
   // ── SYSTEM_ADMIN ────────────────────────────────────────────
