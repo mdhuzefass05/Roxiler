@@ -13,6 +13,33 @@ import { ROLES, ROUTES } from '../../utils/constants';
  * - NORMAL_USER  → Normal User Area (/stores)
  * - STORE_OWNER  → Store Owner Area (/owner)
  */
+const DEMO_ACCOUNTS = [
+  {
+    role: 'SYSTEM_ADMIN',
+    label: 'Admin',
+    icon: '👑',
+    email: 'admin@storerate.dev',
+    password: 'Admin@1234',
+    hint: 'Full platform management',
+  },
+  {
+    role: 'STORE_OWNER',
+    label: 'Store Owner',
+    icon: '🏬',
+    email: 'owner@storerate.dev',
+    password: 'Owner@1234',
+    hint: 'Store dashboard & ratings',
+  },
+  {
+    role: 'NORMAL_USER',
+    label: 'Customer',
+    icon: '🛍️',
+    email: 'user@storerate.dev',
+    password: 'User@1234',
+    hint: 'Browse & rate stores',
+  },
+];
+
 const Login = () => {
   const { login, loading, error } = useAuth();
   const navigate = useNavigate();
@@ -39,6 +66,11 @@ const Login = () => {
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleQuickFill = (acc) => {
+    setForm({ email: acc.email, password: acc.password });
+    setFieldErrors({});
   };
 
   const validateForm = () => {
@@ -110,6 +142,26 @@ const Login = () => {
             Sign In
           </Button>
         </form>
+
+        {/* ── Quick Demo Login Autofill ────────────────────────────── */}
+        <div className="demo-section">
+          <div className="demo-section__title">⚡ Quick Demo Accounts</div>
+          <div className="demo-section__grid">
+            {DEMO_ACCOUNTS.map((acc) => (
+              <button
+                key={acc.role}
+                type="button"
+                className="demo-chip-btn"
+                onClick={() => handleQuickFill(acc)}
+                title={`Autofill ${acc.label} (${acc.email})`}
+              >
+                <span className="demo-chip__icon">{acc.icon}</span>
+                <span>{acc.label}</span>
+                <span className="demo-chip__role">{acc.email.split('@')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="auth-card__footer">
           <p>
