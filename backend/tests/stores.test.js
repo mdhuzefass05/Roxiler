@@ -19,6 +19,18 @@ test('STORES SUITE: /api/v1/stores', async (t) => {
     assert.ok(res.body.data.pagination);
   });
 
+  await t.test('GET /stores - Authenticated NORMAL_USER can filter stores by category', async () => {
+    const token = createUserToken();
+    const res = await request(app)
+      .get('/api/v1/stores?category=Tech%20%26%20Electronics')
+      .set('Authorization', `Bearer ${token}`);
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.ok(Array.isArray(res.body.data.stores));
+    assert.ok(res.body.data.pagination);
+  });
+
   await t.test('GET /stores - Unauthenticated request is rejected with 401', async () => {
     const res = await request(app).get('/api/v1/stores');
 
