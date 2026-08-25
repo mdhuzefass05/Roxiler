@@ -49,16 +49,24 @@ export const createUser = [
 
 /**
  * Validation for user list query params (filtering / sorting / pagination).
- * GET /api/v1/users?name=&email=&role=&page=&limit=&sort=&order=
+ * GET /api/v1/users?name=&email=&address=&role=&page=&limit=&sort=&order=
  */
 export const listUsers = [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer.').toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be 1–100.').toInt(),
+  query('name').optional().isString().trim(),
+  query('email').optional().isString().trim(),
+  query('address').optional().isString().trim(),
   query('role')
     .optional()
     .isIn(['SYSTEM_ADMIN', 'NORMAL_USER', 'STORE_OWNER'])
     .withMessage('Invalid role filter.'),
+  query('sort')
+    .optional()
+    .isIn(['id', 'name', 'email', 'address', 'role', 'created_at'])
+    .withMessage('Invalid sort column.'),
   query('order')
     .optional()
-    .isIn(['asc', 'desc']).withMessage('Order must be asc or desc.'),
+    .isIn(['asc', 'desc', 'ASC', 'DESC'])
+    .withMessage('Order must be asc or desc.'),
 ];
