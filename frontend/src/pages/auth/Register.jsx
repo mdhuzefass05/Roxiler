@@ -94,7 +94,7 @@ const Register = () => {
             name="name"
             type="text"
             label="Full Name"
-            placeholder="Johnathan Doe Customer"
+            placeholder="Aarav Sharma Customer Shopper"
             value={form.name}
             onChange={handleChange}
             error={fieldErrors.name}
@@ -121,7 +121,7 @@ const Register = () => {
             name="address"
             type="text"
             label="Address"
-            placeholder="123 Shopping Avenue, Suite 400"
+            placeholder="42 MG Road, Indiranagar, Bengaluru, Karnataka 560038"
             value={form.address}
             onChange={handleChange}
             error={fieldErrors.address}
