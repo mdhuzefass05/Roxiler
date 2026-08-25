@@ -6,7 +6,7 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
-import StarRating from '../../components/common/StarRating';
+import StarRating, { getRatingColor } from '../../components/common/StarRating';
 import SkeletonTable from '../../components/common/SkeletonTable';
 import useDebounce from '../../hooks/useDebounce';
 import useToast from '../../hooks/useToast';
@@ -576,7 +576,9 @@ const StoreManagement = () => {
                     <td>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <StarRating value={s.average_rating} size="sm" />
-                        <strong>{s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'}</strong>
+                        <strong style={{ color: getRatingColor(s.average_rating) }}>
+                          {s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'}
+                        </strong>
                         <span className="text-muted" style={{ fontSize: '0.8rem' }}>({s.total_ratings})</span>
                       </div>
                     </td>
@@ -914,7 +916,9 @@ const StoreManagement = () => {
                 <span className="detail-label">Overall Rating</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                   <StarRating value={selectedStore.average_rating} size="sm" />
-                  <strong>{selectedStore.average_rating ? Number(selectedStore.average_rating).toFixed(1) : '0.0'}</strong>
+                  <strong style={{ color: getRatingColor(selectedStore.average_rating) }}>
+                    {selectedStore.average_rating ? Number(selectedStore.average_rating).toFixed(1) : '0.0'}
+                  </strong>
                 </div>
               </div>
               <div className="detail-field">

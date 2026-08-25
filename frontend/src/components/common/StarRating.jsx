@@ -1,10 +1,34 @@
 import { useState } from 'react';
 
 /**
+ * Helper to determine the rating color tier (5 = Emerald, 4 = Amber, 3 = Orange, 2 = Coral, 1 = Ruby)
+ */
+export const getRatingTier = (score) => {
+  const num = parseFloat(score) || 0;
+  if (num >= 4.5) return 'tier-5'; // 5 Stars: Emerald Green
+  if (num >= 3.5) return 'tier-4'; // 4 Stars: Amber Gold
+  if (num >= 2.5) return 'tier-3'; // 3 Stars: Tangerine Orange
+  if (num >= 1.5) return 'tier-2'; // 2 Stars: Coral Rose
+  if (num > 0) return 'tier-1';    // 1 Star: Ruby Crimson
+  return 'tier-0';                // Unrated: Slate
+};
+
+/**
+ * Helper to get the hex color matching the rating tier
+ */
+export const getRatingColor = (score) => {
+  const num = parseFloat(score) || 0;
+  if (num >= 4.5) return '#10b981'; // Emerald Green
+  if (num >= 3.5) return '#f59e0b'; // Amber Gold
+  if (num >= 2.5) return '#f97316'; // Tangerine Orange
+  if (num >= 1.5) return '#e11d48'; // Coral Rose
+  if (num > 0) return '#dc2626';    // Ruby Crimson
+  return '#94a3b8';                // Slate
+};
+
+/**
  * StarRating — accessible visual star display and input component.
- *
- * Supports readonly mode (for displaying overall/average ratings with decimals)
- * and interactive mode with full keyboard navigation (Left/Right arrow, Space, Enter, 1-5 keys).
+ * Features dynamic multi-tier color palette that adapts to rating score or hover state.
  */
 const StarRating = ({
   value = 0,
@@ -18,6 +42,7 @@ const StarRating = ({
   const [hoverValue, setHoverValue] = useState(null);
   const numericValue = parseFloat(value) || 0;
   const activeRating = hoverValue !== null ? hoverValue : numericValue;
+  const tierClass = getRatingTier(activeRating);
 
   const handleStarClick = (starIndex) => {
     if (interactive && onChange) {
@@ -44,7 +69,9 @@ const StarRating = ({
 
   return (
     <div
-      className={`star-rating star-rating--${size} ${interactive ? 'star-rating--interactive' : ''}`}
+      className={`star-rating star-rating--${size} star-rating--${tierClass} ${
+        interactive ? 'star-rating--interactive' : ''
+      }`}
       role={interactive ? 'radiogroup' : 'img'}
       aria-label={
         interactive
@@ -98,7 +125,10 @@ const StarRating = ({
         <span className="star-rating__score">
           {numericValue > 0 ? (
             <>
-              <strong>{numericValue.toFixed(1)}</strong> / 5.0
+              <strong style={{ color: getRatingColor(numericValue) }}>
+                {numericValue.toFixed(1)}
+              </strong>{' '}
+              / 5.0
             </>
           ) : (
             <span className="text-muted">No ratings yet</span>

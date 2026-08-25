@@ -5,7 +5,7 @@ import useDebounce from '../../hooks/useDebounce';
 import useToast from '../../hooks/useToast';
 import Button from '../../components/common/Button';
 import Pagination from '../../components/common/Pagination';
-import StarRating from '../../components/common/StarRating';
+import StarRating, { getRatingColor } from '../../components/common/StarRating';
 import SkeletonTable from '../../components/common/SkeletonTable';
 import OwnerReplyModal from '../../components/common/OwnerReplyModal';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
@@ -317,7 +317,7 @@ const OwnerDashboard = () => {
           </div>
           <h3>Average Rating</h3>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-            <p className="stat-card__value">
+            <p className="stat-card__value" style={{ color: getRatingColor(avgRating) }}>
               {avgRating > 0 ? Number(avgRating).toFixed(1) : '0.0'}
             </p>
             <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-muted)' }}>/ 5.0</span>
@@ -532,7 +532,7 @@ const OwnerDashboard = () => {
                     <td>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <StarRating value={r.rating_value} size="sm" />
-                        <strong style={{ color: 'var(--color-accent-amber)' }}>
+                        <strong style={{ color: getRatingColor(r.rating_value) }}>
                           {r.rating_value} ★
                         </strong>
                       </div>

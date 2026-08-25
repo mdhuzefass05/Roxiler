@@ -7,7 +7,7 @@ import useToast from '../../hooks/useToast';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
-import StarRating from '../../components/common/StarRating';
+import StarRating, { getRatingColor } from '../../components/common/StarRating';
 import SkeletonCard from '../../components/common/SkeletonCard';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import EditProfileModal from '../../components/common/EditProfileModal';
@@ -532,7 +532,9 @@ const UserDashboard = () => {
                         <div className="store-rating-box__bottom">
                           <StarRating value={s.average_rating} size="sm" />
                           <div className="store-score-pill">
-                            <strong>{s.average_rating > 0 ? Number(s.average_rating).toFixed(1) : '0.0'}</strong>
+                            <strong style={{ color: getRatingColor(s.average_rating) }}>
+                              {s.average_rating > 0 ? Number(s.average_rating).toFixed(1) : '0.0'}
+                            </strong>
                             <span className="store-score-pill__max">/ 5.0</span>
                           </div>
                         </div>
@@ -546,7 +548,7 @@ const UserDashboard = () => {
                             <div className="my-rating-badge">
                               <StarRating value={s.user_rating} size="xs" />
                               <span className="my-rating-text">
-                                <strong>{s.user_rating}</strong> / 5
+                                <strong style={{ color: getRatingColor(s.user_rating) }}>{s.user_rating}</strong> / 5
                               </span>
                             </div>
                           ) : (
@@ -616,7 +618,10 @@ const UserDashboard = () => {
                   interactive
                   onChange={(newScore) => setSelectedScore(newScore)}
                 />
-                <div className="rating-selected-label">
+                <div
+                  className="rating-selected-label"
+                  style={{ color: getRatingColor(selectedScore), fontWeight: 900, transition: 'color 0.2s ease' }}
+                >
                   {RATING_LABELS[selectedScore]}
                 </div>
               </div>
@@ -719,7 +724,7 @@ const UserDashboard = () => {
                     </div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       <StarRating value={item.rating_value} size="sm" />
-                      <strong style={{ color: 'var(--color-accent-amber)' }}>{item.rating_value} ★</strong>
+                      <strong style={{ color: getRatingColor(item.rating_value) }}>{item.rating_value} ★</strong>
                     </div>
                   </div>
                   {item.comment && (

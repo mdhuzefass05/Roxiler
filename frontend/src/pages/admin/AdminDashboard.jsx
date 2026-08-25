@@ -6,7 +6,7 @@ import { getAdminStatsApi } from '../../api/admin.api';
 import { getUsersApi } from '../../api/users.api';
 import { getStoresApi } from '../../api/stores.api';
 import Button from '../../components/common/Button';
-import StarRating from '../../components/common/StarRating';
+import StarRating, { getRatingColor } from '../../components/common/StarRating';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import EditProfileModal from '../../components/common/EditProfileModal';
 import { exportUsersCsv, exportStoresCsv } from '../../utils/export';
@@ -273,7 +273,7 @@ const AdminDashboard = () => {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <StarRating value={s.average_rating} size="sm" />
-                    <strong style={{ color: 'var(--color-accent-amber)' }}>
+                    <strong style={{ color: getRatingColor(s.average_rating) }}>
                       {s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'}
                     </strong>
                   </div>
@@ -320,7 +320,7 @@ const AdminDashboard = () => {
                     </div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       <StarRating value={r.rating_value} size="sm" />
-                      <strong style={{ color: 'var(--color-accent-amber)' }}>{r.rating_value} ★</strong>
+                      <strong style={{ color: getRatingColor(r.rating_value) }}>{r.rating_value} ★</strong>
                     </div>
                   </div>
                   {r.comment && (

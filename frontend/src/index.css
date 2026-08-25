@@ -851,18 +851,83 @@ a:hover {
   cursor: pointer;
 }
 
-.star-rating--interactive .star-btn:hover,
-.star-rating--interactive .star-btn--hovered {
-  transform: scale(1.18) translateY(-2px);
-  color: var(--color-accent-amber);
-  background: rgba(245, 158, 11, 0.15);
-  box-shadow: var(--shadow-clay-orb-amber);
-}
-
 .star-btn--filled {
   color: #ffffff !important;
   background: var(--gradient-amber) !important;
   box-shadow: var(--shadow-clay-orb-amber) !important;
+}
+
+/* ── Multi-Tier Dynamic Star Color Rating Palette ────────────────────────── */
+
+/* Tier 5 (4.5 - 5.0 Stars): Vibrant Emerald / Jade */
+.star-rating--tier-5 .star-btn--filled {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.35) !important;
+}
+.star-rating--tier-5.star-rating--interactive .star-btn:hover,
+.star-rating--tier-5.star-rating--interactive .star-btn--hovered {
+  transform: scale(1.18) translateY(-2px);
+  color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Tier 4 (3.5 - 4.4 Stars): Golden Honey Amber */
+.star-rating--tier-4 .star-btn--filled {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.35) !important;
+}
+.star-rating--tier-4.star-rating--interactive .star-btn:hover,
+.star-rating--tier-4.star-rating--interactive .star-btn--hovered {
+  transform: scale(1.18) translateY(-2px);
+  color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Tier 3 (2.5 - 3.4 Stars): Warm Tangerine / Orange */
+.star-rating--tier-3 .star-btn--filled {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.35) !important;
+}
+.star-rating--tier-3.star-rating--interactive .star-btn:hover,
+.star-rating--tier-3.star-rating--interactive .star-btn--hovered {
+  transform: scale(1.18) translateY(-2px);
+  color: #f97316 !important;
+  background: rgba(249, 115, 22, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4) !important;
+}
+
+/* Tier 2 (1.5 - 2.4 Stars): Coral Rose */
+.star-rating--tier-2 .star-btn--filled {
+  background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%) !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.35) !important;
+}
+.star-rating--tier-2.star-rating--interactive .star-btn:hover,
+.star-rating--tier-2.star-rating--interactive .star-btn--hovered {
+  transform: scale(1.18) translateY(-2px);
+  color: #e11d48 !important;
+  background: rgba(225, 29, 72, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4) !important;
+}
+
+/* Tier 1 (0.1 - 1.4 Stars): Ruby Crimson */
+.star-rating--tier-1 .star-btn--filled {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.35) !important;
+}
+.star-rating--tier-1.star-rating--interactive .star-btn:hover,
+.star-rating--tier-1.star-rating--interactive .star-btn--hovered {
+  transform: scale(1.18) translateY(-2px);
+  color: #dc2626 !important;
+  background: rgba(220, 38, 38, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* Tier 0 (Unrated / 0): Muted Slate */
+.star-rating--tier-0 .star-btn--filled {
+  background: #94a3b8 !important;
+  box-shadow: none !important;
 }
 
 .star-rating--xs .star-btn {

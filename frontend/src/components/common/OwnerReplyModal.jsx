@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Modal from './Modal';
 import Button from './Button';
-import StarRating from './StarRating';
+import StarRating, { getRatingColor } from './StarRating';
 import { replyToRatingApi } from '../../api/ratings.api';
 import useToast from '../../hooks/useToast';
 
@@ -68,7 +68,7 @@ const OwnerReplyModal = ({ isOpen, onClose, review, onReplied }) => {
             <strong>{review.user?.name || review.user_name || 'Verified Customer'}</strong>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <StarRating value={review.rating_value} size="sm" />
-              <strong style={{ color: 'var(--color-accent-amber)' }}>{review.rating_value} ★</strong>
+              <strong style={{ color: getRatingColor(review.rating_value) }}>{review.rating_value} ★</strong>
             </div>
           </div>
           {review.comment ? (
