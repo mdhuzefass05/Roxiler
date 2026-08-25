@@ -5,6 +5,7 @@ import useDebounce from '../../hooks/useDebounce';
 import Button from '../../components/common/Button';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 
 const OwnerDashboard = () => {
   const { user } = useAuth();
@@ -42,6 +43,7 @@ const OwnerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // ── Initial Store & Stats Load ─────────────────────────────────────
   const fetchStoreProfileAndStats = useCallback(async () => {
@@ -233,7 +235,10 @@ const OwnerDashboard = () => {
           <h1>{store.name}</h1>
           <p>📍 {store.address} &nbsp;•&nbsp; ✉️ {store.email}</p>
         </div>
-        <div className="dashboard__actions">
+        <div className="dashboard__actions" style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+          <Button variant="outline" size="sm" onClick={() => setIsPasswordModalOpen(true)}>
+            🔒 Change Password
+          </Button>
           <Button variant="outline" size="sm" onClick={fetchStoreProfileAndStats}>
             ↻ Refresh Analytics
           </Button>
@@ -453,6 +458,12 @@ const OwnerDashboard = () => {
           )}
         </div>
       </section>
+
+      {/* ── Change Password Modal ─────────────────────────────────────── */}
+      <ChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </main>
   );
 };

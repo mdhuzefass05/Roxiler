@@ -2,20 +2,10 @@ import { body } from 'express-validator';
 
 /**
  * Auth validators — express-validator chains.
- *
- * Usage:
- *   router.post('/register', authValidator.register, validate, asyncHandler(controller));
  */
 
 /**
  * Validation rules for POST /api/v1/auth/register
- *
- * Business rules (per spec):
- *   - name:     20–60 characters
- *   - address:  max 400 characters
- *   - email:    valid email format
- *   - password: 8–16 characters, must contain at least one uppercase letter
- *               and one special character
  */
 export const register = [
   body('name')
@@ -59,17 +49,38 @@ export const login = [
 ];
 
 /**
- * Validation rules for PATCH /api/v1/auth/change-password
+ * Validation rules for PATCH & POST /api/v1/auth/change-password
  */
 export const changePassword = [
-  body('currentPassword')
-    .notEmpty().withMessage('Current password is required.'),
+  body()
+    .custom((value) => {
+      const currentPassword = value.currentPassword || value.current_password;
+      if (!currentPassword || typeof currentPassword !== 'string' || !currentPassword.trim()) {
+        throw new Error('Current password is required.');
+      }
 
-  body('newPassword')
-    .notEmpty().withMessage('New password is required.')
-    .isLength({ min: 8, max: 16 })
-    .withMessage('Password must be between 8 and 16 characters.')
-    .matches(/[A-Z]/).withMessage('New password must contain at least one uppercase letter.')
-    .matches(/[!@#$%^&*(),.?":{}|<>]/)
-    .withMessage('New password must contain at least one special character.'),
+      const newPassword = value.newPassword || value.new_password;
+      if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 16) {
+        throw new Error('New password must be between 8 and 16 characters.');
+      }
+
+      if (!/[A-Z]/.test(newPassword)) {
+        throw new Error('New password must contain at least one uppercase letter.');
+      }
+
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+        throw new Error('New password must contain at least one special character.');
+      }
+
+      const confirmPassword = value.confirmPassword || value.confirm_password;
+      if (confirmPassword !== undefined && confirmPassword !== newPassword) {
+        throw new Error('New password and confirmation password do not match.');
+      }
+
+      if (currentPassword === newPassword) {
+        throw new Error('New password must be different from your current password.');
+      }
+
+      return true;
+    }),
 ];
