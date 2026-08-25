@@ -49,6 +49,23 @@ export const login = [
 ];
 
 /**
+ * Validation rules for PATCH /api/v1/auth/profile
+ */
+export const updateProfile = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 20, max: 60 })
+    .withMessage('Name must be between 20 and 60 characters.'),
+
+  body('address')
+    .optional()
+    .trim()
+    .isLength({ max: 400 })
+    .withMessage('Address must not exceed 400 characters.'),
+];
+
+/**
  * Validation rules for PATCH & POST /api/v1/auth/change-password
  */
 export const changePassword = [

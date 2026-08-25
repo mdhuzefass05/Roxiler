@@ -1,8 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Navbar from './components/common/Navbar';
+import CommandPalette from './components/common/CommandPalette';
+import ClayBackgroundBlobs from './components/common/ClayBackgroundBlobs';
 
 // Auth pages
 import Login from './pages/auth/Login';
@@ -18,73 +21,74 @@ import OwnerDashboard from './pages/owner/OwnerDashboard';
 import NotFound from './pages/NotFound';
 import { ROLES, ROUTES } from './utils/constants';
 
-import ClayBackgroundBlobs from './components/common/ClayBackgroundBlobs';
-
 const App = () => {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <Router>
-          <ClayBackgroundBlobs />
-          <Navbar />
-          <Routes>
-            {/* Public routes */}
-            <Route path={ROUTES.LOGIN} element={<Login />} />
-            <Route path={ROUTES.REGISTER} element={<Register />} />
+        <ToastProvider>
+          <Router>
+            <ClayBackgroundBlobs />
+            <Navbar />
+            <CommandPalette />
+            <Routes>
+              {/* Public routes */}
+              <Route path={ROUTES.LOGIN} element={<Login />} />
+              <Route path={ROUTES.REGISTER} element={<Register />} />
 
-            {/* Root redirect */}
-            <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.LOGIN} replace />} />
+              {/* Root redirect */}
+              <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.LOGIN} replace />} />
 
-            {/* System Admin routes */}
-            <Route
-              path={ROUTES.ADMIN_DASHBOARD}
-              element={
-                <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path={ROUTES.ADMIN_USERS}
-              element={
-                <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
-                  <UserManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path={ROUTES.ADMIN_STORES}
-              element={
-                <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
-                  <StoreManagement />
-                </ProtectedRoute>
-              }
-            />
+              {/* System Admin routes */}
+              <Route
+                path={ROUTES.ADMIN_DASHBOARD}
+                element={
+                  <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={ROUTES.ADMIN_USERS}
+                element={
+                  <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
+                    <UserManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={ROUTES.ADMIN_STORES}
+                element={
+                  <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
+                    <StoreManagement />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Normal User routes */}
-            <Route
-              path={ROUTES.STORES}
-              element={
-                <ProtectedRoute roles={[ROLES.NORMAL_USER]}>
-                  <UserDashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* Normal User routes */}
+              <Route
+                path={ROUTES.STORES}
+                element={
+                  <ProtectedRoute roles={[ROLES.NORMAL_USER]}>
+                    <UserDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Store Owner routes */}
-            <Route
-              path={ROUTES.OWNER_DASHBOARD}
-              element={
-                <ProtectedRoute roles={[ROLES.STORE_OWNER]}>
-                  <OwnerDashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* Store Owner routes */}
+              <Route
+                path={ROUTES.OWNER_DASHBOARD}
+                element={
+                  <ProtectedRoute roles={[ROLES.STORE_OWNER]}>
+                    <OwnerDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* 404 */}
-            <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
-          </Routes>
-        </Router>
+              {/* 404 */}
+              <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
+            </Routes>
+          </Router>
+        </ToastProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

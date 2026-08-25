@@ -1,7 +1,7 @@
 import apiClient from './axios';
 
 /**
- * Authentication API services.
+ * Authentication & Profile API services.
  */
 
 export const loginApi = async (credentials) => {
@@ -16,6 +16,11 @@ export const registerApi = async (formData) => {
 
 export const getMeApi = async () => {
   const { data } = await apiClient.get('/auth/me');
+  return data;
+};
+
+export const updateProfileApi = async (profileData) => {
+  const { data } = await apiClient.patch('/auth/profile', profileData);
   return data;
 };
 

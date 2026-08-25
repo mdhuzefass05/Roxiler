@@ -1,40 +1,93 @@
 import { query } from '../database/index.js';
 
 /**
- * Admin Service — platform statistics and administrative operations.
+ * Admin Service — platform statistics, analytics, and administrative operations.
  */
 
 /**
- * Retrieve real-time platform statistics from PostgreSQL in a single round-trip.
- *
- * @returns {Promise<{
- *   total_users: number,
- *   total_stores: number,
- *   total_ratings: number,
- *   total_normal_users: number,
- *   total_store_owners: number,
- *   total_admin_users: number
- * }>}
+ * Retrieve real-time platform statistics, leaderboards, and recent activity feeds.
  */
 export const getDashboardStats = async () => {
-  const { rows } = await query(`
-    SELECT
-      (SELECT COUNT(*)::INTEGER FROM users)                            AS total_users,
-      (SELECT COUNT(*)::INTEGER FROM stores)                           AS total_stores,
-      (SELECT COUNT(*)::INTEGER FROM ratings)                          AS total_ratings,
-      (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'NORMAL_USER') AS total_normal_users,
-      (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'STORE_OWNER') AS total_store_owners,
-      (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'SYSTEM_ADMIN') AS total_admin_users
-  `);
+  const [statsRes, topStoresRes, recentRatingsRes, recentUsersRes] = await Promise.all([
+    query(`
+      SELECT
+        (SELECT COUNT(*)::INTEGER FROM users)                            AS total_users,
+        (SELECT COUNT(*)::INTEGER FROM stores)                           AS total_stores,
+        (SELECT COUNT(*)::INTEGER FROM ratings)                          AS total_ratings,
+        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'NORMAL_USER') AS total_normal_users,
+        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'STORE_OWNER') AS total_store_owners,
+        (SELECT COUNT(*)::INTEGER FROM users WHERE role = 'SYSTEM_ADMIN') AS total_admin_users
+    `),
+    query(`
+      SELECT
+        s.id,
+        s.name,
+        s.address,
+        COALESCE(s.category, 'General') AS category,
+        COUNT(r.id)::INTEGER AS total_ratings,
+        COALESCE(ROUND(AVG(r.rating_value)::NUMERIC, 2), 0.00) AS average_rating
+      FROM stores s
+      LEFT JOIN ratings r ON r.store_id = s.id
+      GROUP BY s.id, s.name, s.address, s.category
+      ORDER BY average_rating DESC, total_ratings DESC
+      LIMIT 5
+    `),
+    query(`
+      SELECT
+        r.id,
+        r.rating_value,
+        r.comment,
+        r.created_at,
+        u.name AS user_name,
+        u.email AS user_email,
+        s.name AS store_name
+      FROM ratings r
+      JOIN users u ON u.id = r.user_id
+      JOIN stores s ON s.id = r.store_id
+      ORDER BY r.created_at DESC
+      LIMIT 5
+    `),
+    query(`
+      SELECT
+        id,
+        name,
+        email,
+        role,
+        created_at
+      FROM users
+      ORDER BY created_at DESC
+      LIMIT 5
+    `),
+  ]);
 
-  return (
-    rows[0] || {
-      total_users: 0,
-      total_stores: 0,
-      total_ratings: 0,
-      total_normal_users: 0,
-      total_store_owners: 0,
-      total_admin_users: 0,
-    }
-  );
+  const stats = statsRes.rows[0] || {
+    total_users: 0,
+    total_stores: 0,
+    total_ratings: 0,
+    total_normal_users: 0,
+    total_store_owners: 0,
+    total_admin_users: 0,
+  };
+
+  return {
+    ...stats,
+    top_stores: topStoresRes.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      address: row.address,
+      category: row.category,
+      average_rating: parseFloat(row.average_rating || 0),
+      total_ratings: parseInt(row.total_ratings || 0, 10),
+    })),
+    recent_ratings: recentRatingsRes.rows.map((row) => ({
+      id: row.id,
+      rating_value: row.rating_value,
+      comment: row.comment,
+      created_at: row.created_at,
+      user_name: row.user_name,
+      user_email: row.user_email,
+      store_name: row.store_name,
+    })),
+    recent_users: recentUsersRes.rows,
+  };
 };

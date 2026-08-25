@@ -56,27 +56,28 @@ export const findAllWithUserRating = async ({
   const offsetIdx = queryParams.length;
 
   const { rows } = await query(
-    `SELECT
-       s.id                                                    AS store_id,
-       s.name                                                  AS store_name,
-       s.email                                                 AS store_email,
-       s.address                                               AS store_address,
-       s.owner_id,
-       s.created_at,
-       s.updated_at,
-       COUNT(r.id)::INTEGER                                    AS total_ratings,
-       COALESCE(ROUND(AVG(r.rating_value)::NUMERIC, 2), 0.00) AS average_rating,
-       ur.rating_value                                         AS user_rating
-     FROM stores s
-     LEFT JOIN ratings r  ON r.store_id  = s.id
-     LEFT JOIN ratings ur ON ur.store_id = s.id AND ur.user_id = $${userParamIdx}
-     ${whereClause}
-     GROUP BY
-       s.id, s.name, s.email, s.address, s.owner_id,
-       s.created_at, s.updated_at,
-       ur.rating_value
-     ${orderClause}
-     LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+     `SELECT
+        s.id                                                    AS store_id,
+        s.name                                                  AS store_name,
+        s.email                                                 AS store_email,
+        s.address                                               AS store_address,
+        COALESCE(s.category, 'General')                         AS category,
+        s.owner_id,
+        s.created_at,
+        s.updated_at,
+        COUNT(r.id)::INTEGER                                    AS total_ratings,
+        COALESCE(ROUND(AVG(r.rating_value)::NUMERIC, 2), 0.00) AS average_rating,
+        ur.rating_value                                         AS user_rating
+      FROM stores s
+      LEFT JOIN ratings r  ON r.store_id  = s.id
+      LEFT JOIN ratings ur ON ur.store_id = s.id AND ur.user_id = $${userParamIdx}
+      ${whereClause}
+      GROUP BY
+        s.id, s.name, s.email, s.address, s.category, s.owner_id,
+        s.created_at, s.updated_at,
+        ur.rating_value
+      ${orderClause}
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
     queryParams
   );
   return rows;
@@ -98,7 +99,21 @@ export const countAll = async ({ whereClause = '', params = [] } = {}) => {
  */
 export const findById = async (id) => {
   const { rows } = await query(
-    'SELECT * FROM store_ratings_summary WHERE store_id = $1',
+    `SELECT
+       s.id                                                    AS store_id,
+       s.name                                                  AS store_name,
+       s.email                                                 AS store_email,
+       s.address                                               AS store_address,
+       COALESCE(s.category, 'General')                         AS category,
+       s.owner_id,
+       s.created_at,
+       s.updated_at,
+       COUNT(r.id)::INTEGER                                    AS total_ratings,
+       COALESCE(ROUND(AVG(r.rating_value)::NUMERIC, 2), 0.00) AS average_rating
+     FROM stores s
+     LEFT JOIN ratings r ON r.store_id = s.id
+     WHERE s.id = $1
+     GROUP BY s.id, s.name, s.email, s.address, s.category, s.owner_id, s.created_at, s.updated_at`,
     [id]
   );
   return rows[0] || null;
@@ -109,7 +124,21 @@ export const findById = async (id) => {
  */
 export const findByOwnerId = async (ownerId) => {
   const { rows } = await query(
-    'SELECT * FROM store_ratings_summary WHERE owner_id = $1',
+    `SELECT
+       s.id                                                    AS store_id,
+       s.name                                                  AS store_name,
+       s.email                                                 AS store_email,
+       s.address                                               AS store_address,
+       COALESCE(s.category, 'General')                         AS category,
+       s.owner_id,
+       s.created_at,
+       s.updated_at,
+       COUNT(r.id)::INTEGER                                    AS total_ratings,
+       COALESCE(ROUND(AVG(r.rating_value)::NUMERIC, 2), 0.00) AS average_rating
+     FROM stores s
+     LEFT JOIN ratings r ON r.store_id = s.id
+     WHERE s.owner_id = $1
+     GROUP BY s.id, s.name, s.email, s.address, s.category, s.owner_id, s.created_at, s.updated_at`,
     [ownerId]
   );
   return rows[0] || null;
@@ -117,14 +146,47 @@ export const findByOwnerId = async (ownerId) => {
 
 /**
  * Create a new store.
- * @param {{ name, email, address, owner_id }} params
+ * @param {{ name, email, address, owner_id, category }} params
  */
-export const createStore = async ({ name, email, address, owner_id }) => {
+export const createStore = async ({ name, email, address, owner_id, category = 'General' }) => {
   const { rows } = await query(
-    `INSERT INTO stores (name, email, address, owner_id)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO stores (name, email, address, owner_id, category)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [name, email, address, owner_id || null]
+    [name, email, address, owner_id || null, category || 'General']
   );
   return rows[0];
+};
+
+/**
+ * Update an existing store.
+ * @param {number} id
+ * @param {{ name, email, address, owner_id, category }} params
+ */
+export const updateStore = async (id, { name, email, address, owner_id, category }) => {
+  const { rows } = await query(
+    `UPDATE stores
+     SET name = COALESCE($1, name),
+         email = COALESCE($2, email),
+         address = COALESCE($3, address),
+         owner_id = $4,
+         category = COALESCE($5, category),
+         updated_at = NOW()
+     WHERE id = $6
+     RETURNING *`,
+    [name, email, address, owner_id !== undefined ? owner_id : null, category, id]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * Delete a store by ID.
+ * @param {number} id
+ */
+export const deleteStore = async (id) => {
+  const { rows } = await query(
+    'DELETE FROM stores WHERE id = $1 RETURNING id',
+    [id]
+  );
+  return rows[0] || null;
 };

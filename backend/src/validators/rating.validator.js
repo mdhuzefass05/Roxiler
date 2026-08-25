@@ -17,7 +17,7 @@ export const storeIdParam = [
  * Validation for submitting a rating.
  * POST /api/v1/ratings
  *
- * Accepts { storeId / store_id, rating / rating_value }
+ * Accepts { storeId / store_id, rating / rating_value, comment }
  */
 export const submitRating = [
   body()
@@ -32,15 +32,21 @@ export const submitRating = [
         throw new Error('Rating must be an integer between 1 and 5.');
       }
 
+      if (value.comment !== undefined && value.comment !== null) {
+        if (typeof value.comment !== 'string' || value.comment.length > 500) {
+          throw new Error('Comment must be a string of at most 500 characters.');
+        }
+      }
+
       return true;
     }),
 ];
 
 /**
  * Validation for updating an existing rating.
- * PATCH /api/v1/ratings/:storeId
+ * PATCH / PUT /api/v1/ratings/:storeId
  *
- * Accepts { rating / rating_value }
+ * Accepts { rating / rating_value, comment }
  */
 export const updateRating = [
   ...storeIdParam,
@@ -51,6 +57,13 @@ export const updateRating = [
       if (rating === undefined || rating === null || !Number.isInteger(Number(rating)) || Number(rating) < 1 || Number(rating) > 5) {
         throw new Error('Rating must be an integer between 1 and 5.');
       }
+
+      if (value.comment !== undefined && value.comment !== null) {
+        if (typeof value.comment !== 'string' || value.comment.length > 500) {
+          throw new Error('Comment must be a string of at most 500 characters.');
+        }
+      }
+
       return true;
     }),
 ];

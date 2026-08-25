@@ -24,6 +24,7 @@ const formatStore = (row) => ({
   name: row.store_name || row.name,
   email: row.store_email || row.email,
   address: row.store_address || row.address,
+  category: row.category || 'General',
   owner_id: row.owner_id,
   owner_name: row.owner_name || null,
   owner_email: row.owner_email || null,
@@ -40,7 +41,7 @@ const formatStore = (row) => ({
  * Get all stores with server-side filtering, sorting, pagination,
  * overall calculated ratings, and authenticated user's own submitted rating.
  *
- * @param {Object} queryParams - { name, email, address, page, limit, sort, order }
+ * @param {Object} queryParams - { name, email, address, category, page, limit, sort, order }
  * @param {number|null} currentUserId - The authenticated user's ID
  * @returns {Promise<{ stores: Array, pagination: Object }>}
  */
@@ -70,6 +71,12 @@ export const getAllStores = async (queryParams = {}, currentUserId = null) => {
     params.push(`%${queryParams.address.trim()}%`);
     conditions.push(`s.address ILIKE $${params.length}`);
     countConditions.push(`store_address ILIKE $${params.length}`);
+  }
+
+  if (queryParams.category && queryParams.category.trim() && queryParams.category !== 'All') {
+    params.push(queryParams.category.trim());
+    conditions.push(`s.category = $${params.length}`);
+    countConditions.push(`category = $${params.length}`);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -111,11 +118,10 @@ export const getStoreById = async (id) => {
 /**
  * Create a new store (SYSTEM_ADMIN only).
  *
- * @param {{ name: string, email: string, address: string, owner_id?: number }} data
+ * @param {{ name: string, email: string, address: string, owner_id?: number, category?: string }} data
  * @returns {Promise<Object>} Created store with owner & rating details
  */
-export const createStore = async ({ name, email, address, owner_id }) => {
-  // 1. Verify owner exists and has STORE_OWNER role if owner_id is supplied
+export const createStore = async ({ name, email, address, owner_id, category = 'General' }) => {
   if (owner_id) {
     const owner = await userModel.findById(owner_id);
     if (!owner) {
@@ -126,17 +132,59 @@ export const createStore = async ({ name, email, address, owner_id }) => {
     }
   }
 
-  // 2. Insert store into database
   const created = await storeModel.createStore({
     name,
     email,
     address,
     owner_id: owner_id || null,
+    category: category || 'General',
   });
 
-  // 3. Fetch enriched record from the store_ratings_summary view
   const store = await storeModel.findById(created.id);
   return formatStore(store || created);
+};
+
+/**
+ * Update an existing store (SYSTEM_ADMIN).
+ *
+ * @param {number} id
+ * @param {{ name?: string, email?: string, address?: string, owner_id?: number, category?: string }} data
+ * @returns {Promise<Object>} Updated store record
+ */
+export const updateStore = async (id, { name, email, address, owner_id, category }) => {
+  const existing = await storeModel.findById(id);
+  if (!existing) {
+    throw new AppError('Store not found.', 404);
+  }
+
+  if (owner_id) {
+    const owner = await userModel.findById(owner_id);
+    if (!owner) {
+      throw new AppError('The specified store owner was not found.', 404);
+    }
+    if (owner.role !== 'STORE_OWNER') {
+      throw new AppError('The assigned owner must have the STORE_OWNER role.', 400);
+    }
+  }
+
+  const updated = await storeModel.updateStore(id, { name, email, address, owner_id, category });
+  const full = await storeModel.findById(id);
+  return formatStore(full || updated);
+};
+
+/**
+ * Delete a store by ID (SYSTEM_ADMIN).
+ *
+ * @param {number} id
+ * @returns {Promise<{ id: number }>}
+ */
+export const deleteStore = async (id) => {
+  const existing = await storeModel.findById(id);
+  if (!existing) {
+    throw new AppError('Store not found.', 404);
+  }
+  await storeModel.deleteStore(id);
+  return { id: parseInt(id, 10) };
 };
 
 /**

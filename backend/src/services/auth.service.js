@@ -133,3 +133,19 @@ export const changePassword = async (userId, { currentPassword, newPassword }) =
   const newPasswordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
   await userModel.updatePasswordHash(userId, newPasswordHash);
 };
+
+/**
+ * Update authenticated user's profile details (name, address).
+ *
+ * @param {number} userId
+ * @param {{ name?: string, address?: string }} data
+ * @returns {Promise<Object>} Safe updated user record
+ */
+export const updateProfile = async (userId, { name, address }) => {
+  const user = await userModel.findById(userId);
+  if (!user) {
+    throw new AppError('User not found.', 404);
+  }
+  const updated = await userModel.updateProfile(userId, { name, address });
+  return sanitizeUser(updated);
+};

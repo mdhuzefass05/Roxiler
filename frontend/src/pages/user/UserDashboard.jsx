@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getStoresApi } from '../../api/stores.api';
-import { submitRatingApi, updateRatingApi } from '../../api/ratings.api';
+import { submitRatingApi, updateRatingApi, getMyRatingsApi } from '../../api/ratings.api';
 import useAuth from '../../hooks/useAuth';
 import useDebounce from '../../hooks/useDebounce';
+import useToast from '../../hooks/useToast';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
+import EditProfileModal from '../../components/common/EditProfileModal';
+
+const STORE_CATEGORIES = [
+  'All',
+  'Tech & Electronics',
+  'Grocery & Mart',
+  'Fashion & Boutique',
+  'Cafe & Dining',
+  'Services & Wellness',
+];
 
 const RATING_LABELS = {
   1: '1 Star — Poor',
@@ -17,8 +28,11 @@ const RATING_LABELS = {
   5: '5 Stars — Excellent',
 };
 
+const FAVORITES_STORAGE_KEY = 'storerate_favorites';
+
 const UserDashboard = () => {
   const { user } = useAuth();
+  const toast = useToast();
 
   // ── Store List State ───────────────────────────────────────────────
   const [stores, setStores] = useState([]);
@@ -32,6 +46,17 @@ const UserDashboard = () => {
   const [filters, setFilters] = useState({
     name: '',
     address: '',
+    category: 'All',
+    favoritesOnly: false,
+  });
+
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
   });
 
   const debouncedName = useDebounce(filters.name, 350);
@@ -44,16 +69,32 @@ const UserDashboard = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [feedbackMsg, setFeedbackMsg] = useState(null);
+
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [myRatingsHistory, setMyRatingsHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // ── Rating Modal State ─────────────────────────────────────────────
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedScore, setSelectedScore] = useState(5);
+  const [ratingComment, setRatingComment] = useState('');
   const [isModifying, setIsModifying] = useState(false);
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingError, setRatingError] = useState(null);
+
+  // ── Save Favorites ─────────────────────────────────────────────────
+  const toggleFavorite = (storeId) => {
+    setFavorites((prev) => {
+      const next = prev.includes(storeId)
+        ? prev.filter((id) => id !== storeId)
+        : [...prev, storeId];
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   // ── Fetch Stores ───────────────────────────────────────────────────
   const fetchStores = useCallback(async () => {
@@ -69,15 +110,20 @@ const UserDashboard = () => {
 
       if (debouncedName.trim()) params.name = debouncedName.trim();
       if (debouncedAddress.trim()) params.address = debouncedAddress.trim();
+      if (filters.category && filters.category !== 'All') params.category = filters.category;
 
       const res = await getStoresApi(params);
-      const storeList = res?.data?.stores || res?.data || [];
+      let storeList = res?.data?.stores || res?.data || [];
       const meta = res?.data?.pagination || res?.meta || {
         page: pagination.page,
         limit: pagination.limit,
         total: storeList.length,
         totalPages: 1,
       };
+
+      if (filters.favoritesOnly) {
+        storeList = storeList.filter((s) => favorites.includes(s.id));
+      }
 
       setStores(storeList);
       setPagination(meta);
@@ -95,6 +141,9 @@ const UserDashboard = () => {
     sort.order,
     debouncedName,
     debouncedAddress,
+    filters.category,
+    filters.favoritesOnly,
+    favorites,
   ]);
 
   useEffect(() => {
@@ -103,13 +152,18 @@ const UserDashboard = () => {
 
   // ── Filter & Sort Handlers ─────────────────────────────────────────
   const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleCategorySelect = (category) => {
+    setFilters((prev) => ({ ...prev, category }));
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleResetFilters = () => {
-    setFilters({ name: '', address: '' });
+    setFilters({ name: '', address: '', category: 'All', favoritesOnly: false });
     setSort({ column: 'name', order: 'asc' });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
@@ -120,20 +174,13 @@ const UserDashboard = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handlePageChange = (newPage) => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-  };
-
-  const handleLimitChange = (newLimit) => {
-    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
-  };
-
   // ── Rating Actions ─────────────────────────────────────────────────
   const handleOpenRatingModal = (store) => {
     setSelectedStore(store);
     const hasRated = store.user_rating !== null && store.user_rating !== undefined;
     setIsModifying(hasRated);
     setSelectedScore(hasRated ? store.user_rating : 5);
+    setRatingComment('');
     setRatingError(null);
     setIsRatingModalOpen(true);
   };
@@ -147,40 +194,18 @@ const UserDashboard = () => {
 
     try {
       if (isModifying) {
-        await updateRatingApi(selectedStore.id, selectedScore);
-        setFeedbackMsg(`Your rating for "${selectedStore.name}" was updated to ${selectedScore} stars!`);
+        await updateRatingApi(selectedStore.id, selectedScore, ratingComment.trim() || undefined);
+        toast.success(`Updated rating for "${selectedStore.name}" to ${selectedScore} stars!`);
       } else {
         await submitRatingApi({
           store_id: selectedStore.id,
           rating_value: selectedScore,
+          comment: ratingComment.trim() || undefined,
         });
-        setFeedbackMsg(`Thank you! Your ${selectedScore}-star rating for "${selectedStore.name}" was submitted.`);
+        toast.success(`Submitted your ${selectedScore}-star review for "${selectedStore.name}"!`);
       }
 
-      // Optimistic update
-      setStores((prevStores) =>
-        prevStores.map((s) => {
-          if (s.id === selectedStore.id) {
-            const oldRating = s.user_rating;
-            const isNew = oldRating === null || oldRating === undefined;
-            const newTotalCount = isNew ? s.total_ratings + 1 : s.total_ratings;
-            const oldSum = (s.average_rating || 0) * (s.total_ratings || 0);
-            const newSum = isNew ? oldSum + selectedScore : oldSum - (oldRating || 0) + selectedScore;
-            const newAvg = newTotalCount > 0 ? parseFloat((newSum / newTotalCount).toFixed(2)) : selectedScore;
-
-            return {
-              ...s,
-              user_rating: selectedScore,
-              average_rating: newAvg,
-              total_ratings: newTotalCount,
-            };
-          }
-          return s;
-        })
-      );
-
       setIsRatingModalOpen(false);
-      setTimeout(() => setFeedbackMsg(null), 5000);
       fetchStores();
     } catch (err) {
       setRatingError(
@@ -192,6 +217,19 @@ const UserDashboard = () => {
     }
   };
 
+  const handleOpenHistoryModal = async () => {
+    setIsHistoryModalOpen(true);
+    setHistoryLoading(true);
+    try {
+      const res = await getMyRatingsApi();
+      setMyRatingsHistory(res?.data || []);
+    } catch {
+      toast.error('Failed to load ratings history.');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   return (
     <main className="dashboard-page">
       {/* Header */}
@@ -200,10 +238,24 @@ const UserDashboard = () => {
           <span className="dashboard__role-tag">Customer Portal</span>
           <h1>Explore & Rate Stores</h1>
           <p>
-            Welcome, <strong>{user?.name}</strong>! Discover local stores and share your authentic ratings.
+            Welcome, <strong>{user?.name}</strong>! Discover local stores, leave authentic reviews, and bookmark your favorites.
           </p>
         </div>
-        <div className="dashboard__actions">
+        <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenHistoryModal}
+          >
+            ⭐ My Ratings History
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsProfileModalOpen(true)}
+          >
+            👤 Edit Profile
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -214,13 +266,6 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Success Notification */}
-      {feedbackMsg && (
-        <div className="alert alert--success" role="alert">
-          {feedbackMsg}
-        </div>
-      )}
-
       {/* Error Alert */}
       {error && (
         <div className="alert alert--error" role="alert">
@@ -230,6 +275,31 @@ const UserDashboard = () => {
           </Button>
         </div>
       )}
+
+      {/* Category Filter Chips Bar */}
+      <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+        {STORE_CATEGORIES.map((cat) => {
+          const isActive = filters.category === cat;
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => handleCategorySelect(cat)}
+              className="btn btn--sm"
+              style={{
+                background: isActive ? 'var(--gradient-primary)' : 'rgba(255, 255, 255, 0.85)',
+                color: isActive ? '#ffffff' : 'var(--color-foreground)',
+                boxShadow: isActive ? 'var(--shadow-clay-button)' : 'var(--shadow-clay-card)',
+                borderRadius: '16px',
+                whiteSpace: 'nowrap',
+                fontWeight: 800,
+              }}
+            >
+              {cat === 'All' ? '🏬 All Stores' : cat}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Search & Sort Panel */}
       <section className="filter-panel">
@@ -278,25 +348,34 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {(filters.name || filters.address) && (
-          <div className="filter-actions">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '0.9rem' }}>
+            <input
+              type="checkbox"
+              name="favoritesOnly"
+              checked={filters.favoritesOnly}
+              onChange={handleFilterChange}
+              style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--color-accent-pink)' }}
+            />
+            <span>❤️ Show Saved Favorites Only ({favorites.length})</span>
+          </label>
+
+          {(filters.name || filters.address || filters.category !== 'All' || filters.favoritesOnly) && (
             <button
               type="button"
               className="btn btn--outline btn--sm"
               onClick={handleResetFilters}
             >
-              ✕ Clear Search
+              ✕ Clear Filters
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </section>
 
       {/* Stores Grid / Cards Layout */}
       {loading ? (
         <div className="stores-loading-state">
-          <div className="spinner-wrapper">
-            <span className="spinner" />
-          </div>
+          <span className="spinner" />
           <p>Loading registered stores…</p>
         </div>
       ) : stores.length === 0 ? (
@@ -304,8 +383,8 @@ const UserDashboard = () => {
           <div className="empty-state-icon">🏬</div>
           <h3>No Stores Found</h3>
           <p>No registered businesses matched your current search filters.</p>
-          {(filters.name || filters.address) && (
-            <Button variant="outline" size="sm" onClick={handleResetFilters} style={{ marginTop: 'var(--space-md)' }}>
+          {(filters.name || filters.address || filters.category !== 'All' || filters.favoritesOnly) && (
+            <Button variant="outline" size="sm" onClick={handleResetFilters} style={{ marginTop: '1rem' }}>
               Reset Filters
             </Button>
           )}
@@ -314,45 +393,68 @@ const UserDashboard = () => {
         <section className="stores-grid">
           {stores.map((s) => {
             const hasUserRated = s.user_rating !== null && s.user_rating !== undefined;
+            const isFav = favorites.includes(s.id);
 
             return (
               <article key={s.id} className="store-card">
-                <div className="store-card__header">
-                  <div className="store-card__icon">🏪</div>
-                  <div className="store-card__title-wrap">
-                    <h2 className="store-card__name">{s.name}</h2>
-                    <p className="store-card__address">📍 {s.address}</p>
-                  </div>
-                </div>
-
-                <div className="store-card__body">
-                  {/* Overall Store Rating */}
-                  <div className="store-card__metric-row">
-                    <span className="store-metric-label">Overall Rating:</span>
-                    <div className="store-metric-val">
-                      <StarRating
-                        value={s.average_rating}
-                        size="md"
-                        showNumber
-                        totalCount={s.total_ratings}
-                      />
+                <div>
+                  <div className="store-card__header">
+                    <div className="store-card__icon">🏪</div>
+                    <div className="store-card__title-wrap" style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <h2 className="store-card__name">{s.name}</h2>
+                        <button
+                          type="button"
+                          onClick={() => toggleFavorite(s.id)}
+                          title={isFav ? 'Remove from favorites' : 'Save to favorites'}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            fontSize: '1.3rem',
+                            cursor: 'pointer',
+                            padding: '0.2rem',
+                            lineHeight: 1,
+                          }}
+                        >
+                          {isFav ? '❤️' : '🤍'}
+                        </button>
+                      </div>
+                      <span className="badge badge--user" style={{ fontSize: '0.75rem', marginTop: '0.35rem' }}>
+                        {s.category || 'General'}
+                      </span>
+                      <p className="store-card__address">📍 {s.address}</p>
                     </div>
                   </div>
 
-                  {/* Authenticated User Rating Status */}
-                  <div className="store-card__metric-row user-rating-row">
-                    <span className="store-metric-label">Your Rating:</span>
-                    <div className="store-metric-val">
-                      {hasUserRated ? (
-                        <div className="my-rating-badge">
-                          <StarRating value={s.user_rating} size="sm" />
-                          <span className="my-rating-text">
-                            <strong>{s.user_rating}</strong> / 5
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="unrated-badge">Not Rated Yet</span>
-                      )}
+                  <div className="store-card__body">
+                    {/* Overall Store Rating */}
+                    <div className="store-card__metric-row">
+                      <span className="store-metric-label">Overall Rating:</span>
+                      <div className="store-metric-val">
+                        <StarRating
+                          value={s.average_rating}
+                          size="md"
+                          showNumber
+                          totalCount={s.total_ratings}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Authenticated User Rating Status */}
+                    <div className="store-card__metric-row user-rating-row">
+                      <span className="store-metric-label">Your Rating:</span>
+                      <div className="store-metric-val">
+                        {hasUserRated ? (
+                          <div className="my-rating-badge">
+                            <StarRating value={s.user_rating} size="sm" />
+                            <span className="my-rating-text">
+                              <strong>{s.user_rating}</strong> / 5
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="unrated-badge">Not Rated Yet</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -375,14 +477,14 @@ const UserDashboard = () => {
 
       {/* Pagination Footer */}
       {!loading && pagination.total > 0 && (
-        <div style={{ marginTop: 'var(--space-xl)' }}>
+        <div style={{ marginTop: '2rem' }}>
           <Pagination
             page={pagination.page}
             limit={pagination.limit}
             total={pagination.total}
             totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
+            onPageChange={(p) => setPagination((prev) => ({ ...prev, page: p }))}
+            onLimitChange={(l) => setPagination((prev) => ({ ...prev, limit: l, page: 1 }))}
             itemLabel="stores"
           />
         </div>
@@ -420,17 +522,39 @@ const UserDashboard = () => {
                 </div>
               </div>
 
+              {/* Optional Review Commentary */}
+              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                <label htmlFor="rating-comment" className="form-label">
+                  Written Feedback (Optional)
+                </label>
+                <textarea
+                  id="rating-comment"
+                  rows="3"
+                  maxLength={500}
+                  placeholder="Share details about your experience, product quality, or customer service…"
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                  className="form-input"
+                  style={{ height: 'auto', padding: '0.75rem 1.25rem' }}
+                />
+                <span className="form-helper-text" style={{ textAlign: 'right', display: 'block' }}>
+                  {ratingComment.length}/500 characters
+                </span>
+              </div>
+
               <div className="rating-store-summary-box">
                 <div className="summary-row">
                   <span>Store:</span>
                   <strong>{selectedStore.name}</strong>
                 </div>
                 <div className="summary-row">
-                  <span>Address:</span>
-                  <span>{selectedStore.address}</span>
+                  <span>Category:</span>
+                  <span className="badge badge--user" style={{ fontSize: '0.75rem' }}>
+                    {selectedStore.category || 'General'}
+                  </span>
                 </div>
                 <div className="summary-row">
-                  <span>Current Overall Rating:</span>
+                  <span>Current Overall:</span>
                   <span>{selectedStore.average_rating > 0 ? `${selectedStore.average_rating.toFixed(1)} / 5.0 (${selectedStore.total_ratings} reviews)` : 'No ratings yet'}</span>
                 </div>
               </div>
@@ -456,10 +580,72 @@ const UserDashboard = () => {
         )}
       </Modal>
 
+      {/* ── My Ratings History Modal ──────────────────────────────────── */}
+      <Modal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        title="My Submitted Ratings History"
+      >
+        <div>
+          {historyLoading ? (
+            <div className="spinner-wrapper" style={{ padding: '2rem' }}>
+              <span className="spinner" />
+              <p>Loading your reviews…</p>
+            </div>
+          ) : myRatingsHistory.length === 0 ? (
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-muted)', fontWeight: 600 }}>
+              You haven&apos;t rated any stores yet. Browse the catalog and leave your first review!
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '350px', overflowY: 'auto' }}>
+              {myRatingsHistory.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: '0.85rem 1rem',
+                    background: 'var(--color-input-bg)',
+                    boxShadow: 'var(--shadow-clay-pressed)',
+                    borderRadius: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <strong>{item.store_name}</strong>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <StarRating value={item.rating_value} size="sm" />
+                      <strong style={{ color: 'var(--color-accent-amber)' }}>{item.rating_value} ★</strong>
+                    </div>
+                  </div>
+                  {item.comment && (
+                    <p style={{ fontSize: '0.85rem', fontStyle: 'italic', margin: '0.25rem 0', color: 'var(--color-foreground)' }}>
+                      &ldquo;{item.comment}&rdquo;
+                    </p>
+                  )}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                    Reviewed on {new Date(item.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="modal-actions">
+            <Button variant="outline" onClick={() => setIsHistoryModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Change Password Modal */}
       <ChangePasswordModal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
+      />
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
       />
     </main>
   );

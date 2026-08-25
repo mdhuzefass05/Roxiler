@@ -8,6 +8,12 @@ const router = Router();
 
 router.use(authenticate);
 
+// NORMAL_USER: get their own submitted ratings history
+router.get('/my-ratings',
+  authorize('NORMAL_USER'),
+  ratingController.getMyRatings
+);
+
 // NORMAL_USER: submit a rating
 router.post('/',
   authorize('NORMAL_USER'),

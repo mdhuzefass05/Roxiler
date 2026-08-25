@@ -2,13 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { getMyStoreApi, getMyStoreRatingsApi, getMyStoreStatsApi } from '../../api/stores.api';
 import useAuth from '../../hooks/useAuth';
 import useDebounce from '../../hooks/useDebounce';
+import useToast from '../../hooks/useToast';
 import Button from '../../components/common/Button';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
+import EditProfileModal from '../../components/common/EditProfileModal';
+import { exportReviewsCsv } from '../../utils/export';
 
 const OwnerDashboard = () => {
   const { user } = useAuth();
+  const toast = useToast();
 
   // ── Dashboard State ────────────────────────────────────────────────
   const [store, setStore] = useState(null);
@@ -44,6 +48,7 @@ const OwnerDashboard = () => {
   const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // ── Initial Store & Stats Load ─────────────────────────────────────
   const fetchStoreProfileAndStats = useCallback(async () => {
@@ -168,6 +173,15 @@ const OwnerDashboard = () => {
     return <span className="sort-icon active">{sort.order === 'asc' ? '▲' : '▼'}</span>;
   };
 
+  const handleExportReviews = () => {
+    if (ratings.length === 0) {
+      toast.info('No reviews available to export.');
+      return;
+    }
+    exportReviewsCsv(ratings, store?.name);
+    toast.success(`Exported ${ratings.length} reviews to CSV!`);
+  };
+
   // ── Stats Calculations ─────────────────────────────────────────────
   const totalReviews = stats?.total_ratings ?? store?.total_ratings ?? 0;
   const avgRating = stats?.average_rating ?? store?.average_rating ?? 0.0;
@@ -179,9 +193,7 @@ const OwnerDashboard = () => {
     return (
       <main className="dashboard-page">
         <div className="stores-loading-state">
-          <div className="spinner-wrapper">
-            <span className="spinner" />
-          </div>
+          <span className="spinner" />
           <p>Connecting to database and calculating store metrics…</p>
         </div>
       </main>
@@ -212,13 +224,13 @@ const OwnerDashboard = () => {
           </div>
         </div>
 
-        <div className="empty-state-card" style={{ marginTop: 'var(--space-2xl)' }}>
+        <div className="empty-state-card" style={{ marginTop: '2rem' }}>
           <div className="empty-state-icon">🏪</div>
           <h3>No Store Assigned Yet</h3>
           <p>
             Your account is registered as a Store Owner, but no store has been linked to your profile yet.
           </p>
-          <p className="text-muted" style={{ marginTop: 'var(--space-sm)' }}>
+          <p className="text-muted" style={{ marginTop: '0.5rem' }}>
             Please contact the System Administrator to register and assign your business.
           </p>
         </div>
@@ -231,11 +243,20 @@ const OwnerDashboard = () => {
       {/* Header */}
       <div className="dashboard__header-wrapper">
         <div>
-          <span className="dashboard__role-tag">Store Owner Portal</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+            <span className="dashboard__role-tag">Store Owner Portal</span>
+            <span className="badge badge--user">{store.category || 'General'}</span>
+          </div>
           <h1>{store.name}</h1>
           <p>📍 {store.address} &nbsp;•&nbsp; ✉️ {store.email}</p>
         </div>
-        <div className="dashboard__actions" style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+        <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Button variant="outline" size="sm" onClick={handleExportReviews}>
+            📥 Export Reviews CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsProfileModalOpen(true)}>
+            👤 Edit Profile
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsPasswordModalOpen(true)}>
             🔒 Change Password
           </Button>
@@ -254,13 +275,13 @@ const OwnerDashboard = () => {
             <span className="stat-card__tag">Overall Score</span>
           </div>
           <h3>Average Rating</h3>
-          <div className="owner-rating-score-box">
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
             <p className="stat-card__value">
               {avgRating > 0 ? avgRating.toFixed(1) : '0.0'}
             </p>
-            <span className="stat-card__max">/ 5.0</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-muted)' }}>/ 5.0</span>
           </div>
-          <div style={{ marginTop: 'var(--space-xs)' }}>
+          <div style={{ marginTop: '0.5rem' }}>
             <StarRating value={avgRating} size="sm" />
           </div>
         </div>
@@ -269,7 +290,7 @@ const OwnerDashboard = () => {
         <div className="stat-card stat-card--users">
           <div className="stat-card__top">
             <span className="stat-card__icon" aria-hidden="true">👥</span>
-            <span className="stat-card__tag">Feedback</span>
+            <span className="stat-card__tag">Customer Feedback</span>
           </div>
           <h3>Total Customer Ratings</h3>
           <p className="stat-card__value">{totalReviews}</p>
@@ -282,7 +303,7 @@ const OwnerDashboard = () => {
         <div className="stat-card stat-card--stores">
           <div className="stat-card__top">
             <span className="stat-card__icon" aria-hidden="true">🏆</span>
-            <span className="stat-card__tag">Satisfaction</span>
+            <span className="stat-card__tag">Satisfaction Rate</span>
           </div>
           <h3>5-Star Customer Share</h3>
           <p className="stat-card__value">{fiveStarPercent}%</p>
@@ -295,8 +316,8 @@ const OwnerDashboard = () => {
       {/* ── Rating Distribution Progress Bars ─────────────────────────── */}
       <section className="distribution-section">
         <div className="section-header">
-          <h2>Rating Distribution</h2>
-          <p>Breakdown of all customer feedback by star score</p>
+          <h2>Rating Breakdown</h2>
+          <p>Distribution of all customer feedback by star score</p>
         </div>
 
         <div className="distribution-card">
@@ -328,13 +349,18 @@ const OwnerDashboard = () => {
 
       {/* ── Customer Reviews Section with Search & Sorting ────────────── */}
       <section className="owner-reviews-section">
-        <div className="section-header">
-          <h2>Customer Reviews</h2>
-          <p>All verified users who submitted ratings for your store</p>
+        <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h2>Customer Reviews</h2>
+            <p>All verified users who submitted ratings and comments for your store</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleExportReviews}>
+            📥 Export to CSV
+          </Button>
         </div>
 
         {/* Reviewer Filter Controls */}
-        <div className="filter-panel" style={{ marginBottom: 'var(--space-lg)' }}>
+        <div className="filter-panel" style={{ marginTop: '1.25rem', marginBottom: '1.5rem' }}>
           <div className="filter-grid">
             <div className="filter-item">
               <label htmlFor="filter-reviewer-name" className="filter-label">Search Customer Name</label>
@@ -386,10 +412,10 @@ const OwnerDashboard = () => {
                 <th onClick={() => handleSort('email')} className="sortable-header">
                   Email {renderSortIndicator('email')}
                 </th>
-                <th>Address</th>
                 <th onClick={() => handleSort('rating')} className="sortable-header">
                   Rating {renderSortIndicator('rating')}
                 </th>
+                <th>Comment / Feedback</th>
                 <th onClick={() => handleSort('date')} className="sortable-header">
                   Date Submitted {renderSortIndicator('date')}
                 </th>
@@ -422,19 +448,23 @@ const OwnerDashboard = () => {
                       </div>
                     </td>
                     <td>{r.user?.email}</td>
-                    <td className="table-cell-truncate" title={r.user?.address}>
-                      {r.user?.address || '—'}
-                    </td>
                     <td>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <StarRating value={r.rating_value} size="sm" />
-                        <span className="my-rating-text" style={{ fontWeight: 700 }}>
+                        <strong style={{ color: 'var(--color-accent-amber)' }}>
                           {r.rating_value} ★
-                        </span>
+                        </strong>
                       </div>
                     </td>
                     <td>
-                      <span className="text-muted" style={{ fontSize: '0.8rem' }}>
+                      {r.comment ? (
+                        <span style={{ fontStyle: 'italic', fontSize: '0.9rem' }}>&ldquo;{r.comment}&rdquo;</span>
+                      ) : (
+                        <span className="text-muted" style={{ fontSize: '0.85rem' }}>—</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="text-muted" style={{ fontSize: '0.85rem' }}>
                         {new Date(r.created_at).toLocaleDateString()}
                       </span>
                     </td>
@@ -459,10 +489,16 @@ const OwnerDashboard = () => {
         </div>
       </section>
 
-      {/* ── Change Password Modal ─────────────────────────────────────── */}
+      {/* Change Password Modal */}
       <ChangePasswordModal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
+      />
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
       />
     </main>
   );

@@ -20,19 +20,33 @@ export const submitRating = asyncHandler(async (req, res) => {
 });
 
 /**
- * PATCH /api/v1/ratings/:storeId
+ * PATCH / PUT /api/v1/ratings/:storeId
  * NORMAL_USER only — update their existing rating.
  */
 export const updateRating = asyncHandler(async (req, res) => {
   const ratingValue = req.body.rating_value !== undefined ? req.body.rating_value : req.body.rating;
+  const comment = req.body.comment !== undefined ? req.body.comment : undefined;
   const rating = await ratingService.updateRating(
     req.user.id,
     req.params.storeId,
-    ratingValue
+    ratingValue,
+    comment
   );
   return sendSuccess(res, {
     data: rating,
     message: 'Rating updated successfully.',
+  });
+});
+
+/**
+ * GET /api/v1/ratings/my-ratings
+ * NORMAL_USER only — get all ratings submitted by current user.
+ */
+export const getMyRatings = asyncHandler(async (req, res) => {
+  const ratings = await ratingService.getMyRatings(req.user.id);
+  return sendSuccess(res, {
+    data: ratings,
+    message: 'User ratings retrieved successfully.',
   });
 });
 

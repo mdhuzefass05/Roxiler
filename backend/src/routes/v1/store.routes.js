@@ -19,7 +19,9 @@ router.get('/my-store/stats', authorize('STORE_OWNER'), storeController.getMySto
 router.get( '/',    storeValidator.listStores,  validate, storeController.getAllStores);
 router.get( '/:id', storeValidator.idParam,     validate, storeController.getStoreById);
 
-// SYSTEM_ADMIN only: create a store
-router.post('/', authorize('SYSTEM_ADMIN'), storeValidator.createStore, validate, storeController.createStore);
+// SYSTEM_ADMIN only: create, update, and delete stores
+router.post('/',    authorize('SYSTEM_ADMIN'), storeValidator.createStore, validate, storeController.createStore);
+router.put( '/:id', authorize('SYSTEM_ADMIN'), storeValidator.updateStore, validate, storeController.updateStore);
+router.delete('/:id', authorize('SYSTEM_ADMIN'), storeValidator.idParam, validate, storeController.deleteStore);
 
 export default router;

@@ -18,6 +18,7 @@ import {
   validateAddress,
   validatePassword,
 } from '../../utils/validators';
+import { exportUsersCsv } from '../../utils/export';
 import { ROLES, ROUTES } from '../../utils/constants';
 
 const INITIAL_FORM = {
@@ -260,9 +261,20 @@ const UserManagement = () => {
           <h1>User Management</h1>
           <p>Search, filter, sort, inspect, and add platform users</p>
         </div>
-        <div className="dashboard__actions">
+        <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (users.length === 0) return;
+              exportUsersCsv(users);
+            }}
+          >
+            📥 Export CSV
+          </Button>
           <Button
             variant="primary"
+            size="sm"
             onClick={() => {
               setAddForm(INITIAL_FORM);
               setAddErrors({});

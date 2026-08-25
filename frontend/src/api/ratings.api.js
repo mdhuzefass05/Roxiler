@@ -4,13 +4,20 @@ import apiClient from './axios';
  * Rating API services.
  */
 
-export const submitRatingApi = async ({ store_id, rating_value }) => {
-  const { data } = await apiClient.post('/ratings', { store_id, rating_value });
+export const submitRatingApi = async ({ store_id, rating_value, comment }) => {
+  const { data } = await apiClient.post('/ratings', { store_id, rating_value, comment });
   return data;
 };
 
-export const updateRatingApi = async (storeId, ratingValue) => {
-  const { data } = await apiClient.patch(`/ratings/${storeId}`, { rating_value: ratingValue });
+export const updateRatingApi = async (storeId, ratingValue, comment) => {
+  const payload = { rating_value: ratingValue };
+  if (comment !== undefined) payload.comment = comment;
+  const { data } = await apiClient.put(`/ratings/${storeId}`, payload);
+  return data;
+};
+
+export const getMyRatingsApi = async () => {
+  const { data } = await apiClient.get('/ratings/my-ratings');
   return data;
 };
 

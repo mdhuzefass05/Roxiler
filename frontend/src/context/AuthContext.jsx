@@ -108,6 +108,17 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+   * Update current user in state & localStorage.
+   */
+  const updateUser = useCallback((userData) => {
+    setUser((prev) => {
+      const merged = { ...prev, ...userData };
+      localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(merged));
+      return merged;
+    });
+  }, []);
+
   const isAuthenticated = Boolean(user);
 
   const value = useMemo(
@@ -119,8 +130,9 @@ export const AuthProvider = ({ children }) => {
       register,
       login,
       logout,
+      updateUser,
     }),
-    [user, loading, initialCheckDone, error, isAuthenticated, register, login, logout]
+    [user, loading, initialCheckDone, error, isAuthenticated, register, login, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

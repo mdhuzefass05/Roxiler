@@ -19,6 +19,16 @@ export const createStoreApi = async (storeData) => {
   return data;
 };
 
+export const updateStoreApi = async (id, storeData) => {
+  const { data } = await apiClient.put(`/stores/${id}`, storeData);
+  return data;
+};
+
+export const deleteStoreApi = async (id) => {
+  const { data } = await apiClient.delete(`/stores/${id}`);
+  return data;
+};
+
 export const getMyStoreApi = async () => {
   const { data } = await apiClient.get('/stores/my-store');
   return data;

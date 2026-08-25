@@ -121,6 +121,22 @@ export const updatePasswordHash = async (id, passwordHash) => {
 };
 
 /**
+ * Update a user's profile (name and/or address).
+ */
+export const updateProfile = async (id, { name, address }) => {
+  const { rows } = await query(
+    `UPDATE users
+     SET name = COALESCE($1, name),
+         address = COALESCE($2, address),
+         updated_at = NOW()
+     WHERE id = $3
+     RETURNING ${SAFE_COLUMNS}`,
+    [name, address, id]
+  );
+  return rows[0] || null;
+};
+
+/**
  * Delete a user by ID. Returns the deleted record id, or null if not found.
  */
 export const deleteById = async (id) => {

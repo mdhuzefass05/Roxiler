@@ -80,3 +80,27 @@ export const createStore = asyncHandler(async (req, res) => {
     status: 201,
   });
 });
+
+/**
+ * PUT /api/v1/stores/:id
+ * SYSTEM_ADMIN only.
+ */
+export const updateStore = asyncHandler(async (req, res) => {
+  const store = await storeService.updateStore(req.params.id, req.body);
+  return sendSuccess(res, {
+    data: store,
+    message: 'Store updated successfully.',
+  });
+});
+
+/**
+ * DELETE /api/v1/stores/:id
+ * SYSTEM_ADMIN only.
+ */
+export const deleteStore = asyncHandler(async (req, res) => {
+  const result = await storeService.deleteStore(req.params.id);
+  return sendSuccess(res, {
+    data: result,
+    message: 'Store deleted successfully.',
+  });
+});

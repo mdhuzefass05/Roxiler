@@ -42,6 +42,18 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
+ * PATCH /api/v1/auth/profile
+ * Requires: authenticate middleware
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const user = await authService.updateProfile(req.user.id, req.body);
+  return sendSuccess(res, {
+    data: user,
+    message: 'Profile updated successfully.',
+  });
+});
+
+/**
  * PATCH /api/v1/auth/change-password
  * Requires: authenticate middleware
  */

@@ -12,9 +12,11 @@ router.post('/register', authLimiter, authValidator.register,        validate, a
 router.post('/login',    authLimiter, authValidator.login,           validate, authController.login);
 
 // ── Protected routes ──────────────────────────────────────────────────────────
-router.get( '/me',              authenticate, authController.getMe);
-router.post('/logout',          authenticate, authController.logout);
-router.patch('/change-password',authenticate, authValidator.changePassword, validate, authController.changePassword);
-router.put(  '/change-password',authenticate, authValidator.changePassword, validate, authController.changePassword);
+router.get(  '/me',              authenticate, authController.getMe);
+router.patch('/profile',         authenticate, authValidator.updateProfile, validate, authController.updateProfile);
+router.put(  '/profile',         authenticate, authValidator.updateProfile, validate, authController.updateProfile);
+router.post( '/logout',          authenticate, authController.logout);
+router.patch('/change-password', authenticate, authValidator.changePassword, validate, authController.changePassword);
+router.put(  '/change-password', authenticate, authValidator.changePassword, validate, authController.changePassword);
 
 export default router;

@@ -12,12 +12,13 @@ import AppError from '../utils/AppError.js';
  * Throws 409 if a rating already exists for this user/store pair.
  *
  * @param {number} userId
- * @param {{ store_id: number, rating_value: number }} data
+ * @param {{ store_id: number, rating_value: number, comment?: string }} data
  * @returns {Promise<Object>} Created rating
  */
 export const submitRating = async (userId, data) => {
   const storeId = data.store_id || data.storeId;
   const ratingValue = data.rating_value !== undefined ? data.rating_value : data.rating;
+  const comment = data.comment !== undefined ? data.comment : null;
 
   // 1. Verify store exists
   const store = await storeModel.findById(storeId);
@@ -39,6 +40,7 @@ export const submitRating = async (userId, data) => {
     userId,
     storeId,
     rating_value: ratingValue,
+    comment,
   });
 
   return created;
@@ -52,9 +54,10 @@ export const submitRating = async (userId, data) => {
  * @param {number} userId
  * @param {number} storeId
  * @param {number} ratingValue
+ * @param {string|null} comment
  * @returns {Promise<Object>} Updated rating
  */
-export const updateRating = async (userId, storeId, ratingValue) => {
+export const updateRating = async (userId, storeId, ratingValue, comment) => {
   // 1. Verify store exists
   const store = await storeModel.findById(storeId);
   if (!store) {
@@ -68,7 +71,7 @@ export const updateRating = async (userId, storeId, ratingValue) => {
   }
 
   // 3. Update rating in database
-  const updated = await ratingModel.updateRating(userId, storeId, ratingValue);
+  const updated = await ratingModel.updateRating(userId, storeId, ratingValue, comment);
   return updated;
 };
 
@@ -84,4 +87,14 @@ export const getRatingsByStore = async (storeId) => {
     throw new AppError('Store not found.', 404);
   }
   return ratingModel.findByStoreId(storeId);
+};
+
+/**
+ * Get all ratings submitted by the current authenticated user.
+ *
+ * @param {number} userId
+ * @returns {Promise<Array>}
+ */
+export const getMyRatings = async (userId) => {
+  return ratingModel.findByUserId(userId);
 };
