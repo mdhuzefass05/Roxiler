@@ -1,5 +1,5 @@
-import { createContext, useState, useCallback, useMemo } from 'react';
-import apiClient from '../api/axios';
+import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { loginApi, registerApi, getMeApi } from '../api/auth.api';
 import { STORAGE_KEYS } from '../utils/constants';
 
 /**
@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [error, setError] = useState(null);
 
   /**
@@ -32,6 +33,39 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
+   * Clear session.
+   */
+  const logout = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    setUser(null);
+    setError(null);
+  }, []);
+
+  /**
+   * Validate token on app load if token exists.
+   */
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      if (token) {
+        try {
+          const res = await getMeApi();
+          if (res?.data) {
+            setUser(res.data);
+            localStorage.setItem(STORAGE_KEYS.AUTH_USER, JSON.stringify(res.data));
+          }
+        } catch {
+          logout();
+        }
+      }
+      setInitialCheckDone(true);
+    };
+
+    checkAuth();
+  }, [logout]);
+
+  /**
    * Register a new normal user.
    * @param {Object} formData - { name, email, password, address }
    */
@@ -39,11 +73,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await apiClient.post('/auth/register', formData);
-      persistAuth(data.data.token, data.data.user);
-      return data;
+      const res = await registerApi(formData);
+      persistAuth(res.data.token, res.data.user);
+      return res;
     } catch (err) {
-      const message = err.response?.data?.message || 'Registration failed.';
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.errors?.[0]?.msg ||
+        'Registration failed. Please check your details.';
       setError(message);
       throw err;
     } finally {
@@ -59,11 +96,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await apiClient.post('/auth/login', credentials);
-      persistAuth(data.data.token, data.data.user);
-      return data;
+      const res = await loginApi(credentials);
+      persistAuth(res.data.token, res.data.user);
+      return res;
     } catch (err) {
-      const message = err.response?.data?.message || 'Login failed.';
+      const message = err.response?.data?.message || 'Login failed. Please check your credentials.';
       setError(message);
       throw err;
     } finally {
@@ -71,29 +108,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  /**
-   * Log out — clears state and local storage.
-   */
-  const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
-    setUser(null);
-    setError(null);
-  }, []);
-
   const isAuthenticated = Boolean(user);
 
   const value = useMemo(
     () => ({
       user,
-      loading,
+      loading: loading || !initialCheckDone,
       error,
       isAuthenticated,
       register,
       login,
       logout,
     }),
-    [user, loading, error, isAuthenticated, register, login, logout]
+    [user, loading, initialCheckDone, error, isAuthenticated, register, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
