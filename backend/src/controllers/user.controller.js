@@ -1,31 +1,40 @@
-import { sendError } from '../utils/response.js';
+import * as userService from '../services/user.service.js';
+import { sendSuccess } from '../utils/response.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 /**
- * User Controller
- * All handlers are stubbed and return 501 Not Implemented.
- * Implement in Phase 2 (User Management).
+ * User Controller — SYSTEM_ADMIN only.
+ * All routes are guarded by authenticate + authorize('SYSTEM_ADMIN') in the router.
  */
 
 /**
- * GET /api/users
- * List all users. Requires: SYSTEM_ADMIN role.
+ * GET /api/v1/users
  */
-export const getAllUsers = (_req, res) => {
-  return sendError(res, { message: 'getAllUsers — not implemented yet.', status: 501 });
-};
+export const getAllUsers = asyncHandler(async (req, res) => {
+  const { users, meta } = await userService.getAllUsers(req.query);
+  return sendSuccess(res, { data: users, meta, message: 'Users retrieved successfully.' });
+});
 
 /**
- * GET /api/users/:id
- * Get a single user by ID. Requires: SYSTEM_ADMIN role.
+ * GET /api/v1/users/:id
  */
-export const getUserById = (_req, res) => {
-  return sendError(res, { message: 'getUserById — not implemented yet.', status: 501 });
-};
+export const getUserById = asyncHandler(async (req, res) => {
+  const user = await userService.getUserById(req.params.id);
+  return sendSuccess(res, { data: user });
+});
 
 /**
- * DELETE /api/users/:id
- * Delete a user. Requires: SYSTEM_ADMIN role.
+ * POST /api/v1/users
  */
-export const deleteUser = (_req, res) => {
-  return sendError(res, { message: 'deleteUser — not implemented yet.', status: 501 });
-};
+export const createUser = asyncHandler(async (req, res) => {
+  const user = await userService.createUser(req.body);
+  return sendSuccess(res, { data: user, message: 'User created successfully.', status: 201 });
+});
+
+/**
+ * DELETE /api/v1/users/:id
+ */
+export const deleteUser = asyncHandler(async (req, res) => {
+  await userService.deleteUser(req.params.id);
+  return sendSuccess(res, { message: 'User deleted successfully.' });
+});

@@ -1,20 +1,20 @@
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
+import express    from 'express';
+import helmet     from 'helmet';
+import cors       from 'cors';
+import morgan     from 'morgan';
 
-import env from './src/config/env.js';
-import errorHandler from './src/middleware/errorHandler.js';
-
-import authRoutes from './src/routes/auth.routes.js';
-import userRoutes from './src/routes/user.routes.js';
-import storeRoutes from './src/routes/store.routes.js';
-import ratingRoutes from './src/routes/rating.routes.js';
+import env                  from './src/config/env.js';
+import v1Router             from './src/routes/v1/index.js';
+import { generalLimiter }   from './src/middleware/rateLimiter.middleware.js';
+import notFoundMiddleware   from './src/middleware/notFound.middleware.js';
+import errorMiddleware      from './src/middleware/error.middleware.js';
 
 const app = express();
 
-// ──────────────────────────────────────────────
-// Core Middleware
-// ──────────────────────────────────────────────
+// ── Security Headers ──────────────────────────────────────────────────────────
+app.use(helmet());
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(
   cors({
     origin: env.clientUrl,
@@ -24,45 +24,31 @@ app.use(
   })
 );
 
+// ── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// HTTP request logger (dev: coloured, prod: combined)
+// ── HTTP Request Logger ───────────────────────────────────────────────────────
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
-// ──────────────────────────────────────────────
-// Health Check (no auth required)
-// ──────────────────────────────────────────────
+// ── Health Check (unauthenticated, no rate limit) ─────────────────────────────
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
     success: true,
     message: 'Store Rating API is running.',
+    version: 'v1',
     environment: env.nodeEnv,
     timestamp: new Date().toISOString(),
   });
 });
 
-// ──────────────────────────────────────────────
-// API Routes
-// ──────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/stores', storeRoutes);
-app.use('/api/ratings', ratingRoutes);
+// ── API v1 Routes (general rate limiter applied) ──────────────────────────────
+app.use('/api/v1', generalLimiter, v1Router);
 
-// ──────────────────────────────────────────────
-// 404 Handler (unmatched routes)
-// ──────────────────────────────────────────────
-app.use((_req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found.',
-  });
-});
+// ── 404 — Unmatched Routes ────────────────────────────────────────────────────
+app.use(notFoundMiddleware);
 
-// ──────────────────────────────────────────────
-// Global Error Handler (must be last)
-// ──────────────────────────────────────────────
-app.use(errorHandler);
+// ── Global Error Handler (must be last) ───────────────────────────────────────
+app.use(errorMiddleware);
 
 export default app;

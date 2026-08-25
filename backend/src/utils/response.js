@@ -1,37 +1,43 @@
 /**
  * Standardised API response helpers.
- * All API responses follow the same envelope shape:
- *   { success, message, data?, errors? }
+ *
+ * Every API response follows the same envelope:
+ *   { success: bool, message: string, data?: any, meta?: any, errors?: any[] }
  */
 
 /**
- * Send a successful response.
+ * Send a successful JSON response.
+ *
  * @param {import('express').Response} res
  * @param {Object} options
- * @param {any}    options.data    - Response payload
- * @param {string} options.message - Human-readable message
- * @param {number} options.status  - HTTP status code (default 200)
+ * @param {any}    [options.data=null]      - Response payload
+ * @param {any}    [options.meta=null]      - Pagination / extra metadata
+ * @param {string} [options.message='Success']
+ * @param {number} [options.status=200]
  */
-export const sendSuccess = (res, { data = null, message = 'Success', status = 200 } = {}) => {
-  return res.status(status).json({
-    success: true,
-    message,
-    data,
-  });
+export const sendSuccess = (
+  res,
+  { data = null, meta = null, message = 'Success', status = 200 } = {}
+) => {
+  const body = { success: true, message, data };
+  if (meta) body.meta = meta;
+  return res.status(status).json(body);
 };
 
 /**
- * Send an error response.
+ * Send an error JSON response.
+ *
  * @param {import('express').Response} res
  * @param {Object} options
- * @param {string} options.message - Error message
- * @param {number} options.status  - HTTP status code (default 500)
- * @param {any}    options.errors  - Optional validation errors array
+ * @param {string} [options.message='Internal Server Error']
+ * @param {number} [options.status=500]
+ * @param {any}    [options.errors=null] - Validation errors array
  */
-export const sendError = (res, { message = 'Internal Server Error', status = 500, errors = null } = {}) => {
+export const sendError = (
+  res,
+  { message = 'Internal Server Error', status = 500, errors = null } = {}
+) => {
   const body = { success: false, message };
-  if (errors) {
-    body.errors = errors;
-  }
+  if (errors) body.errors = errors;
   return res.status(status).json(body);
 };

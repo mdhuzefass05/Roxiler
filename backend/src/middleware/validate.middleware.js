@@ -2,14 +2,16 @@ import { validationResult } from 'express-validator';
 import { sendError } from '../utils/response.js';
 
 /**
- * Middleware: Checks for express-validator errors after validation chains run.
- * Returns a 422 with the first error per field if validation fails.
+ * validate — Checks for express-validator errors after validation chains run.
+ *
+ * Place this middleware AFTER the validator chain array and BEFORE the controller.
+ * Returns 422 with structured error list if validation fails.
  *
  * @example
  *   router.post('/register',
- *     [body('email').isEmail(), body('password').isLength({ min: 8 })],
- *     validate,      // <-- place this here
- *     authController.register
+ *     authValidator.register,   // array of validation chains
+ *     validate,                 // this middleware
+ *     asyncHandler(authController.register)
  *   );
  */
 const validate = (req, res, next) => {

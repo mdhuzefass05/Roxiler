@@ -1,39 +1,42 @@
-import { sendError } from '../utils/response.js';
+import * as storeService from '../services/store.service.js';
+import { sendSuccess } from '../utils/response.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 /**
  * Store Controller
- * All handlers are stubbed and return 501 Not Implemented.
- * Implement in Phase 3 (Store Management).
  */
 
 /**
- * GET /api/stores
- * Get all stores (with avg ratings). Available to all authenticated users.
+ * GET /api/v1/stores
+ * Available to all authenticated users.
  */
-export const getAllStores = (_req, res) => {
-  return sendError(res, { message: 'getAllStores — not implemented yet.', status: 501 });
-};
+export const getAllStores = asyncHandler(async (req, res) => {
+  const { stores, meta } = await storeService.getAllStores(req.query);
+  return sendSuccess(res, { data: stores, meta, message: 'Stores retrieved successfully.' });
+});
 
 /**
- * GET /api/stores/:id
- * Get a single store by ID.
+ * GET /api/v1/stores/my-store
+ * STORE_OWNER only — returns their own store with ratings breakdown.
  */
-export const getStoreById = (_req, res) => {
-  return sendError(res, { message: 'getStoreById — not implemented yet.', status: 501 });
-};
+export const getMyStore = asyncHandler(async (req, res) => {
+  const store = await storeService.getMyStore(req.user.id);
+  return sendSuccess(res, { data: store });
+});
 
 /**
- * POST /api/stores
- * Create a new store. Requires: SYSTEM_ADMIN role.
+ * GET /api/v1/stores/:id
  */
-export const createStore = (_req, res) => {
-  return sendError(res, { message: 'createStore — not implemented yet.', status: 501 });
-};
+export const getStoreById = asyncHandler(async (req, res) => {
+  const store = await storeService.getStoreById(req.params.id);
+  return sendSuccess(res, { data: store });
+});
 
 /**
- * GET /api/stores/my-store
- * Get the store owned by the logged-in STORE_OWNER with rating breakdown.
+ * POST /api/v1/stores
+ * SYSTEM_ADMIN only.
  */
-export const getMyStore = (_req, res) => {
-  return sendError(res, { message: 'getMyStore — not implemented yet.', status: 501 });
-};
+export const createStore = asyncHandler(async (req, res) => {
+  const store = await storeService.createStore(req.body);
+  return sendSuccess(res, { data: store, message: 'Store created successfully.', status: 201 });
+});

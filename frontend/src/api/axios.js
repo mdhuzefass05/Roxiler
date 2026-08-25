@@ -1,14 +1,14 @@
 /**
  * Centralised Axios instance.
  *
- * - Base URL: proxied through Vite to http://localhost:5000/api in dev
+ * - Base URL: /api/v1 — proxied through Vite to http://localhost:5000/api/v1 in dev
  * - Request interceptor: attaches JWT from localStorage to every request
  * - Response interceptor: redirects to /login on 401
  */
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: '/api', // Vite proxy forwards this to http://localhost:5000/api
+  baseURL: '/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -16,7 +16,6 @@ const apiClient = axios.create({
 });
 
 // ── Request Interceptor ──────────────────────────────────────────────────────
-// Attach the auth token to every outgoing request if it exists.
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
@@ -29,7 +28,6 @@ apiClient.interceptors.request.use(
 );
 
 // ── Response Interceptor ─────────────────────────────────────────────────────
-// Handle 401 globally: clear token and redirect to login.
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

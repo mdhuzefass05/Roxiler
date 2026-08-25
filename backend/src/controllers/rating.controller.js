@@ -1,31 +1,38 @@
-import { sendError } from '../utils/response.js';
+import * as ratingService from '../services/rating.service.js';
+import { sendSuccess } from '../utils/response.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 /**
  * Rating Controller
- * All handlers are stubbed and return 501 Not Implemented.
- * Implement in Phase 4 (Ratings).
  */
 
 /**
- * POST /api/ratings
- * Submit a rating for a store. Requires: NORMAL_USER role.
+ * POST /api/v1/ratings
+ * NORMAL_USER only.
  */
-export const submitRating = (_req, res) => {
-  return sendError(res, { message: 'submitRating — not implemented yet.', status: 501 });
-};
+export const submitRating = asyncHandler(async (req, res) => {
+  const rating = await ratingService.submitRating(req.user.id, req.body);
+  return sendSuccess(res, { data: rating, message: 'Rating submitted successfully.', status: 201 });
+});
 
 /**
- * PATCH /api/ratings/:storeId
- * Modify existing rating for a store. Requires: NORMAL_USER role.
+ * PATCH /api/v1/ratings/:storeId
+ * NORMAL_USER only — update their existing rating.
  */
-export const updateRating = (_req, res) => {
-  return sendError(res, { message: 'updateRating — not implemented yet.', status: 501 });
-};
+export const updateRating = asyncHandler(async (req, res) => {
+  const rating = await ratingService.updateRating(
+    req.user.id,
+    req.params.storeId,
+    req.body.rating
+  );
+  return sendSuccess(res, { data: rating, message: 'Rating updated successfully.' });
+});
 
 /**
- * GET /api/ratings/store/:storeId
- * Get all ratings for a store.
+ * GET /api/v1/ratings/store/:storeId
+ * Any authenticated user.
  */
-export const getRatingsByStore = (_req, res) => {
-  return sendError(res, { message: 'getRatingsByStore — not implemented yet.', status: 501 });
-};
+export const getRatingsByStore = asyncHandler(async (req, res) => {
+  const ratings = await ratingService.getRatingsByStore(req.params.storeId);
+  return sendSuccess(res, { data: ratings, message: 'Ratings retrieved successfully.' });
+});

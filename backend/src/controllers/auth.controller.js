@@ -1,41 +1,51 @@
-import { sendError } from '../utils/response.js';
+import * as authService from '../services/auth.service.js';
+import { sendSuccess } from '../utils/response.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 /**
  * Auth Controller
- * All handlers are stubbed and return 501 Not Implemented.
- * Implement in Phase 2 (Authentication).
+ *
+ * Thin layer — delegates all logic to authService.
+ * asyncHandler forwards any thrown errors to the global error middleware.
  */
 
 /**
- * POST /api/auth/register
- * Register a new NORMAL_USER.
+ * POST /api/v1/auth/register
  */
-export const register = (_req, res) => {
-  return sendError(res, { message: 'register — not implemented yet.', status: 501 });
-};
+export const register = asyncHandler(async (req, res) => {
+  const result = await authService.register(req.body);
+  return sendSuccess(res, {
+    data: result,
+    message: 'Account created successfully.',
+    status: 201,
+  });
+});
 
 /**
- * POST /api/auth/login
- * Authenticate any user (all roles) and return a JWT.
+ * POST /api/v1/auth/login
  */
-export const login = (_req, res) => {
-  return sendError(res, { message: 'login — not implemented yet.', status: 501 });
-};
+export const login = asyncHandler(async (req, res) => {
+  const result = await authService.login(req.body);
+  return sendSuccess(res, {
+    data: result,
+    message: 'Logged in successfully.',
+  });
+});
 
 /**
- * GET /api/auth/me
- * Return the currently authenticated user's profile.
+ * GET /api/v1/auth/me
  * Requires: authenticate middleware
  */
-export const getMe = (_req, res) => {
-  return sendError(res, { message: 'getMe — not implemented yet.', status: 501 });
-};
+export const getMe = asyncHandler(async (req, res) => {
+  const user = await authService.getMe(req.user.id);
+  return sendSuccess(res, { data: user });
+});
 
 /**
- * PATCH /api/auth/change-password
- * Change the authenticated user's password.
+ * PATCH /api/v1/auth/change-password
  * Requires: authenticate middleware
  */
-export const changePassword = (_req, res) => {
-  return sendError(res, { message: 'changePassword — not implemented yet.', status: 501 });
-};
+export const changePassword = asyncHandler(async (req, res) => {
+  await authService.changePassword(req.user.id, req.body);
+  return sendSuccess(res, { message: 'Password updated successfully.' });
+});
