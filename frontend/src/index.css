@@ -3,6 +3,9 @@
    Design tokens → Reset → Layout → Components
    ═══════════════════════════════════════════════════ */
 
+/* ── Google Fonts (must be first @import) ────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 /* ── Design Tokens ───────────────────────────────── */
 :root {
   /* Colors */
@@ -63,9 +66,6 @@
   /* Navbar */
   --navbar-height: 64px;
 }
-
-/* ── Google Fonts ────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ── CSS Reset ───────────────────────────────────── */
 *,
