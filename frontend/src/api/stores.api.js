@@ -23,3 +23,13 @@ export const getMyStoreApi = async () => {
   const { data } = await apiClient.get('/stores/my-store');
   return data;
 };
+
+export const getMyStoreRatingsApi = async (params = {}) => {
+  const { data } = await apiClient.get('/stores/my-store/ratings', { params });
+  return data;
+};
+
+export const getMyStoreStatsApi = async () => {
+  const { data } = await apiClient.get('/stores/my-store/stats');
+  return data;
+};
