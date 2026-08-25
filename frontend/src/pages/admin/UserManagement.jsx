@@ -9,7 +9,9 @@ import {
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
+import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import useDebounce from '../../hooks/useDebounce';
 import {
   validateName,
   validateEmail,
@@ -27,7 +29,7 @@ const INITIAL_FORM = {
 };
 
 const UserManagement = () => {
-  // ── State ──────────────────────────────────────────────────────────
+  // ── Table State ────────────────────────────────────────────────────
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -43,6 +45,10 @@ const UserManagement = () => {
     role: '',
   });
 
+  const debouncedName = useDebounce(filters.name, 350);
+  const debouncedEmail = useDebounce(filters.email, 350);
+  const debouncedAddress = useDebounce(filters.address, 350);
+
   const [sort, setSort] = useState({
     column: 'created_at',
     order: 'desc',
@@ -52,7 +58,7 @@ const UserManagement = () => {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
-  // Modal states
+  // ── Modal States ───────────────────────────────────────────────────
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState(INITIAL_FORM);
   const [addErrors, setAddErrors] = useState({});
@@ -75,9 +81,9 @@ const UserManagement = () => {
         order: sort.order,
       };
 
-      if (filters.name.trim()) params.name = filters.name.trim();
-      if (filters.email.trim()) params.email = filters.email.trim();
-      if (filters.address.trim()) params.address = filters.address.trim();
+      if (debouncedName.trim()) params.name = debouncedName.trim();
+      if (debouncedEmail.trim()) params.email = debouncedEmail.trim();
+      if (debouncedAddress.trim()) params.address = debouncedAddress.trim();
       if (filters.role) params.role = filters.role;
 
       const res = await getUsersApi(params);
@@ -98,7 +104,16 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, sort.column, sort.order, filters]);
+  }, [
+    pagination.page,
+    pagination.limit,
+    sort.column,
+    sort.order,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+    filters.role,
+  ]);
 
   useEffect(() => {
     fetchUsers();
@@ -126,9 +141,11 @@ const UserManagement = () => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    }
+    setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
   };
 
   // ── Details Modal ──────────────────────────────────────────────────
@@ -241,7 +258,7 @@ const UserManagement = () => {
             ← Back to Dashboard
           </Link>
           <h1>User Management</h1>
-          <p>View, filter, sort, inspect, and add platform users</p>
+          <p>Search, filter, sort, inspect, and add platform users</p>
         </div>
         <div className="dashboard__actions">
           <Button
@@ -379,7 +396,7 @@ const UserManagement = () => {
             ) : users.length === 0 ? (
               <tr>
                 <td colSpan="5" className="table-empty">
-                  <p>No users found matching your filters.</p>
+                  <p>No users found matching your search criteria.</p>
                 </td>
               </tr>
             ) : (
@@ -415,40 +432,16 @@ const UserManagement = () => {
           </tbody>
         </table>
 
-        {/* Pagination Footer */}
-        {!loading && pagination.total > 0 && (
-          <div className="pagination-bar">
-            <div className="pagination-info">
-              Showing{' '}
-              <strong>
-                {(pagination.page - 1) * pagination.limit + 1}–
-                {Math.min(pagination.page * pagination.limit, pagination.total)}
-              </strong>{' '}
-              of <strong>{pagination.total}</strong> users
-            </div>
-            <div className="pagination-controls">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page <= 1}
-                onClick={() => handlePageChange(pagination.page - 1)}
-              >
-                ◀ Previous
-              </Button>
-              <span className="pagination-current">
-                Page {pagination.page} of {pagination.totalPages || 1}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => handlePageChange(pagination.page + 1)}
-              >
-                Next ▶
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Reusable Pagination Component */}
+        <Pagination
+          page={pagination.page}
+          limit={pagination.limit}
+          total={pagination.total}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+          itemLabel="users"
+        />
       </section>
 
       {/* ── Add User Modal ────────────────────────────────────────────── */}

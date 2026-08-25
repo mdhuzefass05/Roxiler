@@ -866,6 +866,29 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.pagination-limit-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: var(--space-sm);
+}
+
+.pagination-limit-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.pagination-limit-select {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
 }
 
 .pagination-current {

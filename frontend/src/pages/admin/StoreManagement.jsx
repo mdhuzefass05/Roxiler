@@ -5,7 +5,9 @@ import { getUsersApi } from '../../api/users.api';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
+import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import useDebounce from '../../hooks/useDebounce';
 import { validateEmail, validateAddress } from '../../utils/validators';
 import { ROLES, ROUTES } from '../../utils/constants';
 
@@ -38,6 +40,10 @@ const StoreManagement = () => {
     email: '',
     address: '',
   });
+
+  const debouncedName = useDebounce(filters.name, 350);
+  const debouncedEmail = useDebounce(filters.email, 350);
+  const debouncedAddress = useDebounce(filters.address, 350);
 
   const [sort, setSort] = useState({
     column: 'name',
@@ -74,9 +80,9 @@ const StoreManagement = () => {
         order: sort.order,
       };
 
-      if (filters.name.trim()) params.name = filters.name.trim();
-      if (filters.email.trim()) params.email = filters.email.trim();
-      if (filters.address.trim()) params.address = filters.address.trim();
+      if (debouncedName.trim()) params.name = debouncedName.trim();
+      if (debouncedEmail.trim()) params.email = debouncedEmail.trim();
+      if (debouncedAddress.trim()) params.address = debouncedAddress.trim();
 
       const res = await getStoresApi(params);
       const storeList = res?.data?.stores || res?.data || [];
@@ -96,7 +102,15 @@ const StoreManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, sort.column, sort.order, filters]);
+  }, [
+    pagination.page,
+    pagination.limit,
+    sort.column,
+    sort.order,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+  ]);
 
   useEffect(() => {
     fetchStores();
@@ -138,9 +152,11 @@ const StoreManagement = () => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    }
+    setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
   };
 
   // ── Store Details Flow ─────────────────────────────────────────────
@@ -350,7 +366,7 @@ const StoreManagement = () => {
             ) : stores.length === 0 ? (
               <tr>
                 <td colSpan="6" className="table-empty">
-                  <p>No stores found matching your filters.</p>
+                  <p>No stores found matching your search criteria.</p>
                 </td>
               </tr>
             ) : (
@@ -397,40 +413,16 @@ const StoreManagement = () => {
           </tbody>
         </table>
 
-        {/* Pagination Footer */}
-        {!loading && pagination.total > 0 && (
-          <div className="pagination-bar">
-            <div className="pagination-info">
-              Showing{' '}
-              <strong>
-                {(pagination.page - 1) * pagination.limit + 1}–
-                {Math.min(pagination.page * pagination.limit, pagination.total)}
-              </strong>{' '}
-              of <strong>{pagination.total}</strong> stores
-            </div>
-            <div className="pagination-controls">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page <= 1}
-                onClick={() => handlePageChange(pagination.page - 1)}
-              >
-                ◀ Previous
-              </Button>
-              <span className="pagination-current">
-                Page {pagination.page} of {pagination.totalPages || 1}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => handlePageChange(pagination.page + 1)}
-              >
-                Next ▶
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Reusable Pagination Component */}
+        <Pagination
+          page={pagination.page}
+          limit={pagination.limit}
+          total={pagination.total}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+          onLimitChange={handleLimitChange}
+          itemLabel="stores"
+        />
       </section>
 
       {/* ── Add Store Modal ───────────────────────────────────────────── */}
