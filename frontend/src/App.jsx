@@ -10,6 +10,7 @@ import Register from './pages/auth/Register';
 // Role dashboards
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
+import StoreManagement from './pages/admin/StoreManagement';
 import UserDashboard from './pages/user/UserDashboard';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 
@@ -43,6 +44,14 @@ const App = () => {
             element={
               <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
                 <UserManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.ADMIN_STORES}
+            element={
+              <ProtectedRoute roles={[ROLES.SYSTEM_ADMIN]}>
+                <StoreManagement />
               </ProtectedRoute>
             }
           />

@@ -1058,6 +1058,116 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-muted);
 }
 
+/* ── Star Rating Component ───────────────────────── */
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.star-rating__stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: default;
+  line-height: 1;
+  font-size: 1.15rem;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.star-rating--sm .star-btn {
+  font-size: 0.95rem;
+}
+
+.star-rating--lg .star-btn {
+  font-size: 1.6rem;
+}
+
+.star-rating--interactive .star-btn {
+  cursor: pointer;
+}
+
+.star-rating--interactive .star-btn:hover {
+  transform: scale(1.2);
+}
+
+.star-btn--filled {
+  color: #f59e0b; /* Amber 500 */
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.star-btn--empty {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.star-rating__score {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.star-rating__count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.store-rating-cell {
+  display: flex;
+  align-items: center;
+}
+
+.no-owner-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Store Analytics Modal Card */
+.store-analytics-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.store-analytics-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.big-rating-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.big-rating-max {
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+}
+
+.store-analytics-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
 /* ── Responsive ──────────────────────────────────── */
 @media (max-width: 640px) {
   .auth-card {
