@@ -1397,6 +1397,26 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .stores-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-bar {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  .navbar__links {
+    gap: var(--space-sm);
+  }
+
+  .navbar__user {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .auth-card {
     padding: var(--space-xl);
@@ -1410,7 +1430,16 @@ h1, h2, h3, h4, h5, h6 {
     padding: var(--space-lg) var(--space-md);
   }
 
+  .dashboard__header-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .not-found__code {
     font-size: 5rem;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
   }
 }
