@@ -12,7 +12,7 @@ import asyncHandler from '../utils/asyncHandler.js';
  * Supports filtering by name, email, address + sorting + pagination.
  */
 export const getAllStores = asyncHandler(async (req, res) => {
-  const { stores, pagination } = await storeService.getAllStores(req.query);
+  const { stores, pagination } = await storeService.getAllStores(req.query, req.user?.id);
   return sendSuccess(res, {
     data: { stores, pagination },
     meta: pagination,

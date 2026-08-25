@@ -4,18 +4,18 @@ import { parsePagination, buildPaginationMeta } from '../utils/pagination.js';
 import AppError from '../utils/AppError.js';
 
 /**
- * Map API sort query fields to view columns
+ * Map API sort query fields to query columns
  */
 const SORT_FIELD_MAP = {
-  name: 'store_name',
-  store_name: 'store_name',
-  email: 'store_email',
-  store_email: 'store_email',
-  address: 'store_address',
-  store_address: 'store_address',
+  name: 's.name',
+  store_name: 's.name',
+  email: 's.email',
+  store_email: 's.email',
+  address: 's.address',
+  store_address: 's.address',
   rating: 'average_rating',
   average_rating: 'average_rating',
-  created_at: 'created_at',
+  created_at: 's.created_at',
 };
 
 const formatStore = (row) => ({
@@ -28,46 +28,63 @@ const formatStore = (row) => ({
   owner_email: row.owner_email || null,
   average_rating: parseFloat(row.average_rating || 0),
   total_ratings: parseInt(row.total_ratings || 0, 10),
+  user_rating: row.user_rating !== undefined && row.user_rating !== null
+    ? parseInt(row.user_rating, 10)
+    : null,
   created_at: row.created_at,
   updated_at: row.updated_at,
 });
 
 /**
- * Get all stores with server-side filtering, sorting, and pagination.
+ * Get all stores with server-side filtering, sorting, pagination,
+ * overall calculated ratings, and authenticated user's own submitted rating.
  *
  * @param {Object} queryParams - { name, email, address, page, limit, sort, order }
+ * @param {number|null} currentUserId - The authenticated user's ID
  * @returns {Promise<{ stores: Array, pagination: Object }>}
  */
-export const getAllStores = async (queryParams = {}) => {
+export const getAllStores = async (queryParams = {}, currentUserId = null) => {
   const { limit, offset, order, meta } = parsePagination(queryParams);
 
-  const rawSort = queryParams.sort || 'store_name';
-  const sortColumn = SORT_FIELD_MAP[rawSort] || 'store_name';
+  const rawSort = queryParams.sort || 'name';
+  const sortColumn = SORT_FIELD_MAP[rawSort] || 's.name';
 
   const conditions = [];
+  const countConditions = [];
   const params = [];
 
   if (queryParams.name && queryParams.name.trim()) {
     params.push(`%${queryParams.name.trim()}%`);
-    conditions.push(`store_name ILIKE $${params.length}`);
+    conditions.push(`s.name ILIKE $${params.length}`);
+    countConditions.push(`store_name ILIKE $${params.length}`);
   }
 
   if (queryParams.email && queryParams.email.trim()) {
     params.push(`%${queryParams.email.trim()}%`);
-    conditions.push(`store_email ILIKE $${params.length}`);
+    conditions.push(`s.email ILIKE $${params.length}`);
+    countConditions.push(`store_email ILIKE $${params.length}`);
   }
 
   if (queryParams.address && queryParams.address.trim()) {
     params.push(`%${queryParams.address.trim()}%`);
-    conditions.push(`store_address ILIKE $${params.length}`);
+    conditions.push(`s.address ILIKE $${params.length}`);
+    countConditions.push(`store_address ILIKE $${params.length}`);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const countWhereClause = countConditions.length > 0 ? `WHERE ${countConditions.join(' AND ')}` : '';
   const orderClause = `ORDER BY ${sortColumn} ${order}`;
 
   const [total, rows] = await Promise.all([
-    storeModel.countAll({ whereClause, params }),
-    storeModel.findAll({ whereClause, params, orderClause, limit, offset }),
+    storeModel.countAll({ whereClause: countWhereClause, params }),
+    storeModel.findAllWithUserRating({
+      userId: currentUserId,
+      whereClause,
+      params,
+      orderClause,
+      limit,
+      offset,
+    }),
   ]);
 
   const stores = rows.map(formatStore);

@@ -40,6 +40,49 @@ export const findAll = async ({
 };
 
 /**
+ * Get stores with average rating + authenticated user's own submitted rating.
+ */
+export const findAllWithUserRating = async ({
+  userId = null,
+  whereClause = '',
+  params = [],
+  orderClause = 'ORDER BY store_name ASC',
+  limit = 10,
+  offset = 0,
+} = {}) => {
+  const userParamIdx = params.length + 1;
+  const queryParams = [...params, userId, limit, offset];
+  const limitIdx = queryParams.length - 1;
+  const offsetIdx = queryParams.length;
+
+  const { rows } = await query(
+    `SELECT
+       s.id                                                    AS store_id,
+       s.name                                                  AS store_name,
+       s.email                                                 AS store_email,
+       s.address                                               AS store_address,
+       s.owner_id,
+       s.created_at,
+       s.updated_at,
+       COUNT(r.id)::INTEGER                                    AS total_ratings,
+       COALESCE(ROUND(AVG(r.rating_value)::NUMERIC, 2), 0.00) AS average_rating,
+       ur.rating_value                                         AS user_rating
+     FROM stores s
+     LEFT JOIN ratings r  ON r.store_id  = s.id
+     LEFT JOIN ratings ur ON ur.store_id = s.id AND ur.user_id = $${userParamIdx}
+     ${whereClause}
+     GROUP BY
+       s.id, s.name, s.email, s.address, s.owner_id,
+       s.created_at, s.updated_at,
+       ur.rating_value
+     ${orderClause}
+     LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    queryParams
+  );
+  return rows;
+};
+
+/**
  * Count stores (with optional WHERE on the summary view).
  */
 export const countAll = async ({ whereClause = '', params = [] } = {}) => {
