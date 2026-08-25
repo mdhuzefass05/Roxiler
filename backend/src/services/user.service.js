@@ -82,6 +82,7 @@ export const getUserById = async (id) => {
           address: store.store_address || store.address,
           average_rating: parseFloat(store.average_rating || 0),
           total_ratings: parseInt(store.total_ratings || 0, 10),
+          rating: parseFloat(store.average_rating || 0),
         }
       : null;
   }

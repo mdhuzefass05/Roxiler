@@ -655,9 +655,13 @@ const UserManagement = () => {
               </div>
               {selectedUser.role === ROLES.STORE_OWNER && selectedUser.store && (
                 <div className="detail-field" style={{ gridColumn: 'span 2' }}>
-                  <span className="detail-label">Owned Store</span>
-                  <span className="detail-val">
-                    {selectedUser.store.name} — Rating: {selectedUser.store.rating || 'N/A'} ★
+                  <span className="detail-label">Owned Store & Rating</span>
+                  <span className="detail-val" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                    <strong>{selectedUser.store.name}</strong>
+                    <span style={{ color: 'var(--color-muted)' }}>•</span>
+                    <span style={{ fontWeight: 800, color: 'var(--color-accent-amber)' }}>
+                      Rating: {selectedUser.store.average_rating ? Number(selectedUser.store.average_rating).toFixed(1) : (selectedUser.store.rating !== undefined ? Number(selectedUser.store.rating).toFixed(1) : '0.0')} ★
+                    </span>
                   </span>
                 </div>
               )}
