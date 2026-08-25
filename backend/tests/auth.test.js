@@ -98,4 +98,15 @@ test('AUTH SUITE: /api/v1/auth', async (t) => {
     assert.equal(res.status, 422);
     assert.equal(res.body.success, false);
   });
+
+  await t.test('POST /auth/logout - succeeds when authenticated', async () => {
+    const token = createTestToken();
+    const res = await request(app)
+      .post('/api/v1/auth/logout')
+      .set('Authorization', `Bearer ${token}`);
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.message, 'Logged out successfully.');
+  });
 });

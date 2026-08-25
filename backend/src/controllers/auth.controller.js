@@ -49,3 +49,11 @@ export const changePassword = asyncHandler(async (req, res) => {
   await authService.changePassword(req.user.id, req.body);
   return sendSuccess(res, { message: 'Password updated successfully.' });
 });
+
+/**
+ * POST /api/v1/auth/logout
+ * Requires: authenticate middleware
+ */
+export const logout = asyncHandler(async (_req, res) => {
+  return sendSuccess(res, { message: 'Logged out successfully.' });
+});
