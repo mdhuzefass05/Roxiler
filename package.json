@@ -1,0 +1,21 @@
+{
+  "name": "roxiler-store-rating",
+  "version": "1.0.0",
+  "description": "Store Rating Web Application — Full Stack Monorepo",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan.bold,magenta.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "start": "npm --prefix backend start",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix backend test",
+    "migrate": "npm --prefix backend run migrate",
+    "seed": "npm --prefix backend run seed",
+    "db:setup": "npm --prefix backend run db:setup"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
