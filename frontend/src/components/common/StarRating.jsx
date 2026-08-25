@@ -11,7 +11,7 @@ const StarRating = ({
   max = 5,
   interactive = false,
   onChange,
-  size = 'md', // 'sm' | 'md' | 'lg'
+  size = 'md', // 'xs' | 'sm' | 'md' | 'lg'
   showNumber = false,
   totalCount = null,
 }) => {

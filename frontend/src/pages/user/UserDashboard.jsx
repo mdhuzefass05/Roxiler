@@ -427,26 +427,30 @@ const UserDashboard = () => {
                   </div>
 
                   <div className="store-card__body">
-                    {/* Overall Store Rating */}
-                    <div className="store-card__metric-row">
-                      <span className="store-metric-label">Overall Rating:</span>
-                      <div className="store-metric-val">
-                        <StarRating
-                          value={s.average_rating}
-                          size="md"
-                          showNumber
-                          totalCount={s.total_ratings}
-                        />
+                    {/* Overall Store Rating Box */}
+                    <div className="store-rating-box">
+                      <div className="store-rating-box__top">
+                        <span className="store-metric-label">Overall Rating</span>
+                        <span className="store-metric-reviews">
+                          {s.total_ratings} {s.total_ratings === 1 ? 'review' : 'reviews'}
+                        </span>
+                      </div>
+                      <div className="store-rating-box__bottom">
+                        <StarRating value={s.average_rating} size="sm" />
+                        <div className="store-score-pill">
+                          <strong>{s.average_rating > 0 ? s.average_rating.toFixed(1) : '0.0'}</strong>
+                          <span className="store-score-pill__max">/ 5.0</span>
+                        </div>
                       </div>
                     </div>
 
                     {/* Authenticated User Rating Status */}
-                    <div className="store-card__metric-row user-rating-row">
+                    <div className="store-user-rating-box">
                       <span className="store-metric-label">Your Rating:</span>
-                      <div className="store-metric-val">
+                      <div className="store-user-rating-val">
                         {hasUserRated ? (
                           <div className="my-rating-badge">
-                            <StarRating value={s.user_rating} size="sm" />
+                            <StarRating value={s.user_rating} size="xs" />
                             <span className="my-rating-text">
                               <strong>{s.user_rating}</strong> / 5
                             </span>
