@@ -98,3 +98,27 @@ export const getRatingsByStore = async (storeId) => {
 export const getMyRatings = async (userId) => {
   return ratingModel.findByUserId(userId);
 };
+
+/**
+ * Store Owner posts an official response to a customer review.
+ * STORE_OWNER only.
+ *
+ * @param {number} ratingId
+ * @param {string} replyText
+ * @param {number} ownerId
+ * @returns {Promise<Object>} Updated rating
+ */
+export const replyToRating = async (ratingId, replyText, ownerId) => {
+  const rating = await ratingModel.findById(ratingId);
+  if (!rating) {
+    throw new AppError('Rating review not found.', 404);
+  }
+
+  // Check that this store owner actually owns the rated store
+  if (rating.store_owner_id !== ownerId) {
+    throw new AppError('You are only authorized to reply to reviews for your own store.', 403);
+  }
+
+  const updated = await ratingModel.addOwnerReply(ratingId, replyText);
+  return updated;
+};

@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
+import ThemeToggle from './ThemeToggle';
 import { ROLES, ROUTES } from '../../utils/constants';
 
 /**
  * Navbar — Floating Clay Pill Navigation.
- * Renders role-specific routes, user avatar badge, and tactile logout.
+ * Renders role-specific routes, ThemeToggle, user avatar badge, and tactile logout.
  */
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -106,6 +107,9 @@ const Navbar = () => {
               My Store
             </Link>
           )}
+
+          {/* Theme Toggle Button */}
+          <ThemeToggle size="sm" />
 
           {isAuthenticated && (
             <div className="nav-user-badge">

@@ -12,10 +12,25 @@ import EditProfileModal from '../../components/common/EditProfileModal';
 import { exportUsersCsv, exportStoresCsv } from '../../utils/export';
 import { ROUTES } from '../../utils/constants';
 
-/**
- * System Administrator Dashboard
- * Displays platform KPIs, Top Rated Stores, Recent Activity Feed, and CSV Data Export Hub.
- */
+const timeAgo = (dateStr) => {
+  if (!dateStr) return '';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHours = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMin < 1) return 'just now';
+  if (diffMin === 1) return '1 min ago';
+  if (diffMin < 60) return `${diffMin} mins ago`;
+  if (diffHours === 1) return '1 hour ago';
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
+};
+
 const AdminDashboard = () => {
   const { user } = useAuth();
   const toast = useToast();
@@ -79,21 +94,25 @@ const AdminDashboard = () => {
       exportStoresCsv(stores);
       toast.success(`Exported ${stores.length} stores to CSV!`);
     } catch {
-      toast.error('Failed to export stores directory.');
+      toast.error('Failed to export stores list.');
     } finally {
       setExportLoading(false);
     }
   };
 
+  const counts = stats?.counts || { total_users: 0, total_stores: 0, total_ratings: 0 };
+  const topStores = stats?.top_stores || [];
+  const recentRatings = stats?.recent_ratings || [];
+
   return (
     <main className="dashboard-page">
       {/* Header */}
       <div className="dashboard__header-wrapper">
-        <div className="dashboard__header">
+        <div>
           <div className="dashboard__role-tag">SYSTEM ADMINISTRATOR</div>
-          <h1>Platform Intelligence</h1>
+          <h1>Platform Operations</h1>
           <p>
-            Welcome, <strong>{user?.name}</strong>. Real-time platform metrics, leaderboards, and administrative tools.
+            Welcome, <strong>{user?.name}</strong>! High-level performance metrics, directory control, and activity streams.
           </p>
         </div>
         <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -115,12 +134,26 @@ const AdminDashboard = () => {
             variant="outline"
             size="sm"
             onClick={fetchStats}
-            loading={loading}
           >
-            ↻ Refresh Metrics
+            ↻ Refresh Data
           </Button>
         </div>
       </div>
+
+      {/* Navigation Sub-Nav Tabs */}
+      <nav className="nav-clay-pill" style={{ marginBottom: '2rem', height: '3.75rem' }} aria-label="Admin sub-navigation">
+        <div className="nav-links">
+          <Link to={ROUTES.ADMIN_DASHBOARD} className="nav-link nav-link--active">
+            📊 Overview
+          </Link>
+          <Link to={ROUTES.ADMIN_USERS} className="nav-link">
+            👥 User Management
+          </Link>
+          <Link to={ROUTES.ADMIN_STORES} className="nav-link">
+            🏬 Store Management
+          </Link>
+        </div>
+      </nav>
 
       {/* Error Alert */}
       {error && (
@@ -132,7 +165,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* ── KPI Metric Cards Grid ────────────────────────────────────────── */}
+      {/* ── Key Performance Cards ─────────────────────────────────────── */}
       <div className="dashboard__stats-grid">
         {/* Total Users */}
         <div className="stat-card stat-card--users">
@@ -140,39 +173,23 @@ const AdminDashboard = () => {
             <span className="stat-card__icon" aria-hidden="true">👥</span>
             <span className="stat-card__tag">Platform Users</span>
           </div>
-          <h3>Total Users</h3>
-          <p className="stat-card__value">
-            {loading ? <span className="spinner spinner--sm" /> : (stats?.total_users ?? 0)}
-          </p>
-          <div className="stat-card__breakdown">
-            <span>👤 {stats?.total_normal_users ?? 0} Customers</span>
-            <span>🏪 {stats?.total_store_owners ?? 0} Store Owners</span>
-            <span>🛡️ {stats?.total_admin_users ?? 0} Admins</span>
-          </div>
-          <div style={{ marginTop: '1rem' }}>
-            <Link to={ROUTES.ADMIN_USERS} className="btn btn--outline btn--sm" style={{ width: '100%' }}>
-              Manage Users →
-            </Link>
+          <h3>Registered Users</h3>
+          <p className="stat-card__value">{counts.total_users}</p>
+          <div className="stat-card__footer-link">
+            <Link to={ROUTES.ADMIN_USERS}>Manage user directory →</Link>
           </div>
         </div>
 
         {/* Total Stores */}
         <div className="stat-card stat-card--stores">
           <div className="stat-card__top">
-            <span className="stat-card__icon" aria-hidden="true">🏪</span>
-            <span className="stat-card__tag">Active Directory</span>
+            <span className="stat-card__icon" aria-hidden="true">🏬</span>
+            <span className="stat-card__tag">Business Directory</span>
           </div>
-          <h3>Total Stores</h3>
-          <p className="stat-card__value">
-            {loading ? <span className="spinner spinner--sm" /> : (stats?.total_stores ?? 0)}
-          </p>
+          <h3>Registered Stores</h3>
+          <p className="stat-card__value">{counts.total_stores}</p>
           <div className="stat-card__footer-link">
-            <span>Verified businesses receiving reviews</span>
-          </div>
-          <div style={{ marginTop: '1rem' }}>
-            <Link to={ROUTES.ADMIN_STORES} className="btn btn--outline btn--sm" style={{ width: '100%' }}>
-              Manage Stores →
-            </Link>
+            <Link to={ROUTES.ADMIN_STORES}>Manage store directory →</Link>
           </div>
         </div>
 
@@ -180,81 +197,78 @@ const AdminDashboard = () => {
         <div className="stat-card stat-card--ratings">
           <div className="stat-card__top">
             <span className="stat-card__icon" aria-hidden="true">⭐</span>
-            <span className="stat-card__tag">Customer Feedback</span>
+            <span className="stat-card__tag">Feedback Volume</span>
           </div>
           <h3>Total Ratings Submitted</h3>
-          <p className="stat-card__value">
-            {loading ? <span className="spinner spinner--sm" /> : (stats?.total_ratings ?? 0)}
-          </p>
+          <p className="stat-card__value">{counts.total_ratings}</p>
           <div className="stat-card__footer-link">
-            <span>Authentic user reviews</span>
-          </div>
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              style={{ flex: 1 }}
-              onClick={handleExportStores}
-              disabled={exportLoading}
-            >
-              📥 Export Stores
-            </button>
-            <button
-              type="button"
-              className="btn btn--secondary btn--sm"
-              style={{ flex: 1 }}
-              onClick={handleExportUsers}
-              disabled={exportLoading}
-            >
-              📥 Export Users
-            </button>
+            <span>Aggregated across all stores</span>
           </div>
         </div>
       </div>
 
-      {/* ── Top Rated Stores Leaderboard & Recent Activity Feed ───────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.75rem', marginBottom: '2.5rem' }}>
-        {/* Top Rated Stores */}
-        <section className="card" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 900 }}>🏆 Top Rated Stores</h2>
-            <span className="badge badge--admin">Leaderboard</span>
+      {/* ── Quick Data Export Hub ─────────────────────────────────────── */}
+      <section className="filter-panel" style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>📥 Data Export Hub</h3>
+            <p className="text-muted" style={{ fontSize: '0.9rem' }}>Download platform registers as CSV spreadsheets.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <Button variant="outline" size="sm" onClick={handleExportUsers} loading={exportLoading}>
+              👥 Export Users CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportStores} loading={exportLoading}>
+              🏬 Export Stores CSV
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Top Stores & Recent Activity Grids ────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '2rem', marginTop: '2rem' }}>
+        {/* Top 5 Rated Stores Leaderboard */}
+        <section className="filter-panel" style={{ margin: 0 }}>
+          <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+            <h2>🏆 Top Rated Stores</h2>
+            <p>Businesses with the highest average customer satisfaction</p>
           </div>
 
-          {!stats?.top_stores || stats.top_stores.length === 0 ? (
-            <p style={{ color: 'var(--color-muted)', fontWeight: 600 }}>No rated stores yet.</p>
+          {loading ? (
+            <div className="spinner-wrapper" style={{ padding: '2rem' }}>
+              <span className="spinner" />
+            </div>
+          ) : topStores.length === 0 ? (
+            <p className="text-muted">No ratings recorded yet.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {stats.top_stores.map((s, idx) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {topStores.map((s, idx) => (
                 <div
                   key={s.id}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.75rem 1rem',
+                    padding: '0.85rem 1rem',
                     background: 'var(--color-input-bg)',
                     boxShadow: 'var(--shadow-clay-pressed)',
                     borderRadius: '16px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: '1.1rem', color: 'var(--color-accent-violet)' }}>
-                      #{idx + 1}
+                    <span style={{ fontSize: '1.2rem', fontWeight: 900, width: '1.5rem', textAlign: 'center' }}>
+                      {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                     </span>
                     <div>
                       <strong style={{ display: 'block', fontSize: '0.95rem' }}>{s.name}</strong>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--color-muted)' }}>📍 {s.address}</span>
+                      <span className="badge badge--user" style={{ fontSize: '0.7rem' }}>{s.category || 'General'}</span>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <StarRating value={s.average_rating} size="sm" />
-                      <strong style={{ fontSize: '0.9rem' }}>{s.average_rating.toFixed(1)}</strong>
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-                      {s.total_ratings} reviews
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <StarRating value={s.average_rating} size="sm" />
+                    <strong style={{ color: 'var(--color-accent-amber)' }}>
+                      {s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'}
+                    </strong>
                   </div>
                 </div>
               ))}
@@ -262,46 +276,48 @@ const AdminDashboard = () => {
           )}
         </section>
 
-        {/* Recent Feedback Feed */}
-        <section className="card" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 900 }}>⚡ Recent Customer Ratings</h2>
-            <span className="badge badge--user">Live Activity</span>
+        {/* Live Ratings Feed with Relative Timestamps */}
+        <section className="filter-panel" style={{ margin: 0 }}>
+          <div className="section-header" style={{ marginBottom: '1.25rem' }}>
+            <h2>⚡ Recent Customer Ratings</h2>
+            <p>Live stream of reviews submitted across the platform</p>
           </div>
 
-          {!stats?.recent_ratings || stats.recent_ratings.length === 0 ? (
-            <p style={{ color: 'var(--color-muted)', fontWeight: 600 }}>No recent feedback yet.</p>
+          {loading ? (
+            <div className="spinner-wrapper" style={{ padding: '2rem' }}>
+              <span className="spinner" />
+            </div>
+          ) : recentRatings.length === 0 ? (
+            <p className="text-muted">No recent ratings found.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {stats.recent_ratings.map((r) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {recentRatings.map((r) => (
                 <div
                   key={r.id}
                   style={{
-                    padding: '0.75rem 1rem',
+                    padding: '0.85rem 1rem',
                     background: 'var(--color-input-bg)',
                     boxShadow: 'var(--shadow-clay-pressed)',
                     borderRadius: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.35rem',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>
-                      👤 {r.user_name} → <strong>{r.store_name}</strong>
-                    </span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 800, color: 'var(--color-accent-amber)' }}>
-                      {r.rating_value} ★
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <strong>{r.user_name} → {r.store_name}</strong>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <StarRating value={r.rating_value} size="sm" />
+                      <strong style={{ color: 'var(--color-accent-amber)' }}>{r.rating_value} ★</strong>
+                    </div>
                   </div>
                   {r.comment && (
-                    <p style={{ fontSize: '0.85rem', color: 'var(--color-foreground)', fontStyle: 'italic', margin: 0 }}>
+                    <p style={{ fontSize: '0.85rem', fontStyle: 'italic', margin: '0.25rem 0', color: 'var(--color-foreground)' }}>
                       &ldquo;{r.comment}&rdquo;
                     </p>
                   )}
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', textAlign: 'right' }}>
-                    {new Date(r.created_at).toLocaleString()}
-                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', fontWeight: 700 }}>
+                      🕒 {timeAgo(r.created_at)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

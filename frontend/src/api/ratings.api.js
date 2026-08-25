@@ -25,3 +25,8 @@ export const getRatingsByStoreApi = async (storeId) => {
   const { data } = await apiClient.get(`/ratings/store/${storeId}`);
   return data;
 };
+
+export const replyToRatingApi = async (ratingId, reply) => {
+  const { data } = await apiClient.post(`/ratings/${ratingId}/reply`, { reply });
+  return data;
+};

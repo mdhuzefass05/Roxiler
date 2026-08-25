@@ -4,10 +4,12 @@ import { query } from '../database/index.js';
  * Rating Model — raw SQL query functions.
  *
  * Column reference:
- *   rating_value  SMALLINT  CHECK (rating_value BETWEEN 1 AND 5)
- *   comment       VARCHAR(500)
+ *   rating_value     SMALLINT     CHECK (rating_value BETWEEN 1 AND 5)
+ *   comment          VARCHAR(500)
+ *   owner_reply      VARCHAR(500)
+ *   owner_replied_at TIMESTAMPTZ
  *
- * Schema: src/database/migrations/001_initial.sql, 003_saas_features.sql
+ * Schema: src/database/migrations/001_initial.sql, 003_saas_features.sql, 004_owner_replies.sql
  */
 
 /**
@@ -22,7 +24,21 @@ export const findByUserAndStore = async (userId, storeId) => {
 };
 
 /**
- * Get all ratings for a store, joined with the rater's full profile (name, email, address).
+ * Find a rating by its ID.
+ */
+export const findById = async (ratingId) => {
+  const { rows } = await query(
+    `SELECT r.*, s.owner_id AS store_owner_id
+     FROM ratings r
+     JOIN stores s ON s.id = r.store_id
+     WHERE r.id = $1 LIMIT 1`,
+    [ratingId]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * Get all ratings for a store, joined with the rater's full profile.
  */
 export const findByStoreId = async (storeId) => {
   const { rows } = await query(
@@ -32,6 +48,8 @@ export const findByStoreId = async (storeId) => {
        r.store_id,
        r.rating_value,
        r.comment,
+       r.owner_reply,
+       r.owner_replied_at,
        r.created_at,
        r.updated_at,
        u.name    AS user_name,
@@ -85,6 +103,8 @@ export const findStoreRatingsPaginated = async ({
        r.store_id,
        r.rating_value,
        r.comment,
+       r.owner_reply,
+       r.owner_replied_at,
        r.created_at,
        r.updated_at,
        u.name    AS user_name,
@@ -123,7 +143,8 @@ export const countStoreRatings = async ({ storeId, whereClause = '', params = []
 export const findByUserId = async (userId) => {
   const { rows } = await query(
     `SELECT
-       r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.created_at, r.updated_at,
+       r.id, r.user_id, r.store_id, r.rating_value, r.comment,
+       r.owner_reply, r.owner_replied_at, r.created_at, r.updated_at,
        s.name AS store_name, s.address AS store_address, s.category AS store_category
      FROM ratings r
      JOIN stores s ON s.id = r.store_id
@@ -136,10 +157,6 @@ export const findByUserId = async (userId) => {
 
 /**
  * Create a new rating.
- * Note: The DB trigger fn_prevent_store_owner_rating() will reject
- * any attempt from a STORE_OWNER or SYSTEM_ADMIN.
- *
- * @param {{ userId, storeId, rating_value, comment }} params
  */
 export const createRating = async ({ userId, storeId, rating_value, comment = null }) => {
   const { rows } = await query(
@@ -153,12 +170,6 @@ export const createRating = async ({ userId, storeId, rating_value, comment = nu
 
 /**
  * Update an existing rating.
- * Returns null if no matching rating is found.
- *
- * @param {number} userId
- * @param {number} storeId
- * @param {number} rating_value
- * @param {string|null} comment
  */
 export const updateRating = async (userId, storeId, rating_value, comment) => {
   const { rows } = await query(
@@ -169,6 +180,22 @@ export const updateRating = async (userId, storeId, rating_value, comment) => {
      WHERE user_id = $2 AND store_id = $3
      RETURNING *`,
     [rating_value, userId, storeId, comment !== undefined ? comment : null]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * Add or update a Store Owner's official reply to a customer review.
+ */
+export const addOwnerReply = async (ratingId, replyText) => {
+  const { rows } = await query(
+    `UPDATE ratings
+     SET owner_reply = $1,
+         owner_replied_at = NOW(),
+         updated_at = NOW()
+     WHERE id = $2
+     RETURNING *`,
+    [replyText, ratingId]
   );
   return rows[0] || null;
 };

@@ -71,4 +71,26 @@ test('RATINGS SUITE: /api/v1/ratings', async (t) => {
     assert.equal(res.status, 422);
     assert.equal(res.body.success, false);
   });
+
+  await t.test('POST /ratings/:id/reply - NORMAL_USER is rejected with 403 Forbidden', async () => {
+    const token = createUserToken();
+    const res = await request(app)
+      .post('/api/v1/ratings/1/reply')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ reply: 'Thank you for your feedback!' });
+
+    assert.equal(res.status, 403);
+    assert.equal(res.body.success, false);
+  });
+
+  await t.test('POST /ratings/:id/reply - rejects empty reply message', async () => {
+    const token = createOwnerToken();
+    const res = await request(app)
+      .post('/api/v1/ratings/1/reply')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ reply: '' });
+
+    assert.equal(res.status, 422);
+    assert.equal(res.body.success, false);
+  });
 });

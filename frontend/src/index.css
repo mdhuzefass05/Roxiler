@@ -94,6 +94,36 @@
   --transition-smooth: 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ── Cyber Dark Clay Theme Tokens ────────────────────────────────────────── */
+[data-theme='dark'] {
+  --color-canvas: #110e1a;
+  --color-card-bg: rgba(24, 20, 36, 0.85);
+  --color-card-solid: #1d182c;
+  --color-input-bg: #171324;
+  --color-input-focus: #241d36;
+
+  --color-foreground: #f3eefc;
+  --color-muted: #9e96ad;
+  --color-text-link: #a78bfa;
+
+  --shadow-clay-surface: 24px 24px 48px #08060d, -18px -18px 48px #1e192c,
+    inset 8px 8px 16px rgba(167, 139, 250, 0.08), inset -8px -8px 16px rgba(0, 0, 0, 0.5);
+
+  --shadow-clay-card: 14px 14px 28px rgba(5, 4, 10, 0.6), -8px -8px 20px rgba(35, 29, 52, 0.4),
+    inset 4px 4px 8px rgba(167, 139, 250, 0.05), inset -4px -4px 8px rgba(0, 0, 0, 0.4);
+
+  --shadow-clay-card-hover: 18px 18px 36px rgba(5, 4, 10, 0.75), -10px -10px 24px rgba(35, 29, 52, 0.6),
+    inset 4px 4px 8px rgba(167, 139, 250, 0.1), inset -4px -4px 8px rgba(0, 0, 0, 0.4);
+
+  --shadow-clay-button: 10px 10px 20px rgba(0, 0, 0, 0.5), -6px -6px 14px rgba(167, 139, 250, 0.2),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.3), inset -3px -3px 6px rgba(0, 0, 0, 0.4);
+
+  --shadow-clay-button-secondary: 8px 8px 16px rgba(0, 0, 0, 0.4), -6px -6px 12px rgba(35, 29, 52, 0.5),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.1), inset -3px -3px 6px rgba(0, 0, 0, 0.3);
+
+  --shadow-clay-pressed: inset 6px 6px 12px #0a0812, inset -6px -6px 12px #221c32;
+}
+
 /* ── Reset ───────────────────────────────────────────────────────────────── */
 *,
 *::before,
@@ -1602,6 +1632,302 @@ a:hover {
   margin-bottom: 1rem;
 }
 
+/* ── Theme Toggle Switch ─────────────────────────────────────────────────── */
+.theme-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  outline: none;
+}
+
+.theme-toggle__track {
+  width: 52px;
+  height: 28px;
+  background: var(--color-input-bg);
+  box-shadow: var(--shadow-clay-pressed);
+  border-radius: 9999px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  transition: all var(--transition-smooth);
+}
+
+.theme-toggle__track--dark {
+  background: #241d36;
+}
+
+.theme-toggle__thumb {
+  width: 24px;
+  height: 24px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: var(--shadow-clay-orb-violet);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transform: translateX(0);
+  transition: transform var(--transition-squish);
+}
+
+.theme-toggle__thumb--dark {
+  transform: translateX(24px);
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-clay-orb-violet);
+}
+
+/* ── Shimmer Skeleton Loaders ────────────────────────────────────────────── */
+@keyframes clay-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-block {
+  background: linear-gradient(
+    90deg,
+    var(--color-input-bg) 25%,
+    rgba(255, 255, 255, 0.4) 50%,
+    var(--color-input-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: clay-shimmer 1.8s infinite linear;
+}
+
+[data-theme='dark'] .shimmer-block {
+  background: linear-gradient(
+    90deg,
+    #181424 25%,
+    #2c2440 50%,
+    #181424 75%
+  );
+  background-size: 200% 100%;
+}
+
+.skeleton-card {
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.skeleton-card__banner {
+  height: 90px;
+  width: 100%;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.skeleton-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 16px;
+}
+
+.skeleton-line {
+  border-radius: 6px;
+}
+
+/* ── Store Cover Banners ─────────────────────────────────────────────────── */
+.store-card {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.store-card__banner {
+  height: 100px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.store-card__banner--tech {
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 50%, #7c3aed 100%);
+}
+
+.store-card__banner--grocery {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+}
+
+.store-card__banner--fashion {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%);
+}
+
+.store-card__banner--cafe {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+}
+
+.store-card__banner--wellness {
+  background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 50%, #0284c7 100%);
+}
+
+.store-card__banner--general {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+}
+
+.store-card__banner-badge {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1e192c;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.store-card__content {
+  padding: 1.5rem 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+}
+
+/* ── Trust Seals & Badges ────────────────────────────────────────────────── */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-badge);
+}
+
+.trust-badge--top-rated {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+[data-theme='dark'] .trust-badge--top-rated {
+  background: #362208;
+  color: #fbbf24;
+  border-color: #78350f;
+}
+
+.status-dot--open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-accent-emerald);
+}
+
+.status-dot--open::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent-emerald);
+  box-shadow: 0 0 8px var(--color-accent-emerald);
+}
+
+/* ── Sentiment Meter Widget (Owner Portal) ───────────────────────────────── */
+.sentiment-card {
+  background: var(--color-card-bg);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-card);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-clay-card);
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.sentiment-bar-track {
+  height: 24px;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  background: var(--color-input-bg);
+  box-shadow: var(--shadow-clay-pressed);
+  margin: 1rem 0;
+}
+
+.sentiment-segment--positive {
+  background: var(--gradient-emerald);
+  transition: width 0.6s ease;
+}
+
+.sentiment-segment--neutral {
+  background: var(--gradient-amber);
+  transition: width 0.6s ease;
+}
+
+.sentiment-segment--negative {
+  background: var(--gradient-secondary);
+  transition: width 0.6s ease;
+}
+
+.sentiment-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+/* ── Owner Review Reply Bubble ───────────────────────────────────────────── */
+.owner-reply-bubble {
+  margin-top: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  background: rgba(124, 58, 237, 0.08);
+  border-left: 3px solid var(--color-accent-violet);
+  border-radius: 0 14px 14px 0;
+  font-size: 0.85rem;
+}
+
+.owner-reply-bubble strong {
+  color: var(--color-accent-violet);
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ── Bulk Action Toolbar ─────────────────────────────────────────────────── */
+.bulk-toolbar {
+  position: sticky;
+  bottom: 2rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.bulk-toolbar__inner {
+  pointer-events: auto;
+  background: rgba(30, 24, 44, 0.92);
+  backdrop-filter: blur(20px);
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  animation: clay-pop-in 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ── Accessibility ───────────────────────────────────────────────────────── */
 :focus-visible {
   outline: 3px solid var(--color-accent-violet);
@@ -1618,3 +1944,4 @@ a:hover {
     scroll-behavior: auto !important;
   }
 }
+

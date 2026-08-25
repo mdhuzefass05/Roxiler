@@ -14,6 +14,15 @@ export const storeIdParam = [
 ];
 
 /**
+ * Validates :id route parameter.
+ */
+export const idParam = [
+  param('id')
+    .isInt({ min: 1 }).withMessage('Rating ID must be a positive integer.')
+    .toInt(),
+];
+
+/**
  * Validation for submitting a rating.
  * POST /api/v1/ratings
  *
@@ -66,4 +75,17 @@ export const updateRating = [
 
       return true;
     }),
+];
+
+/**
+ * Validation for Store Owner replying to a rating review.
+ * POST /api/v1/ratings/:id/reply
+ */
+export const replyToRating = [
+  ...idParam,
+
+  body('reply')
+    .trim()
+    .notEmpty().withMessage('Reply message is required.')
+    .isLength({ min: 1, max: 500 }).withMessage('Reply must not exceed 500 characters.'),
 ];

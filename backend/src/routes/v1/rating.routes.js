@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../../middleware/auth.middleware.js';
-import validate                    from '../../middleware/validate.middleware.js';
-import * as ratingValidator        from '../../validators/rating.validator.js';
-import * as ratingController       from '../../controllers/rating.controller.js';
+import validate from '../../middleware/validate.middleware.js';
+import * as ratingValidator from '../../validators/rating.validator.js';
+import * as ratingController from '../../controllers/rating.controller.js';
 
 const router = Router();
 
@@ -35,6 +35,14 @@ router.patch('/:storeId',
   ratingValidator.updateRating,
   validate,
   ratingController.updateRating
+);
+
+// STORE_OWNER: post an official reply to a review
+router.post('/:id/reply',
+  authorize('STORE_OWNER'),
+  ratingValidator.replyToRating,
+  validate,
+  ratingController.replyToRating
 );
 
 // Any authenticated user: view ratings for a store

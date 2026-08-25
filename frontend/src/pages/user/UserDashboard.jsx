@@ -8,6 +8,7 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import SkeletonCard from '../../components/common/SkeletonCard';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import EditProfileModal from '../../components/common/EditProfileModal';
 
@@ -30,6 +31,40 @@ const RATING_LABELS = {
 
 const FAVORITES_STORAGE_KEY = 'storerate_favorites';
 
+const getCategoryBannerClass = (category) => {
+  switch (category) {
+    case 'Tech & Electronics':
+      return 'store-card__banner--tech';
+    case 'Grocery & Mart':
+      return 'store-card__banner--grocery';
+    case 'Fashion & Boutique':
+      return 'store-card__banner--fashion';
+    case 'Cafe & Dining':
+      return 'store-card__banner--cafe';
+    case 'Services & Wellness':
+      return 'store-card__banner--wellness';
+    default:
+      return 'store-card__banner--general';
+  }
+};
+
+const getCategoryIcon = (category) => {
+  switch (category) {
+    case 'Tech & Electronics':
+      return '⚡';
+    case 'Grocery & Mart':
+      return '🥑';
+    case 'Fashion & Boutique':
+      return '👗';
+    case 'Cafe & Dining':
+      return '☕';
+    case 'Services & Wellness':
+      return '🌿';
+    default:
+      return '🏬';
+  }
+};
+
 const UserDashboard = () => {
   const { user } = useAuth();
   const toast = useToast();
@@ -47,6 +82,7 @@ const UserDashboard = () => {
     name: '',
     address: '',
     category: 'All',
+    minRating: 'all', // 'all' | '4.0' | '4.5'
     favoritesOnly: false,
   });
 
@@ -121,6 +157,13 @@ const UserDashboard = () => {
         totalPages: 1,
       };
 
+      // Client rating filters
+      if (filters.minRating === '4.0') {
+        storeList = storeList.filter((s) => Number(s.average_rating) >= 4.0);
+      } else if (filters.minRating === '4.5') {
+        storeList = storeList.filter((s) => Number(s.average_rating) >= 4.5);
+      }
+
       if (filters.favoritesOnly) {
         storeList = storeList.filter((s) => favorites.includes(s.id));
       }
@@ -142,6 +185,7 @@ const UserDashboard = () => {
     debouncedName,
     debouncedAddress,
     filters.category,
+    filters.minRating,
     filters.favoritesOnly,
     favorites,
   ]);
@@ -162,8 +206,13 @@ const UserDashboard = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
+  const handleMinRatingSelect = (rating) => {
+    setFilters((prev) => ({ ...prev, minRating: rating }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
   const handleResetFilters = () => {
-    setFilters({ name: '', address: '', category: 'All', favoritesOnly: false });
+    setFilters({ name: '', address: '', category: 'All', minRating: 'all', favoritesOnly: false });
     setSort({ column: 'name', order: 'asc' });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
@@ -238,7 +287,7 @@ const UserDashboard = () => {
           <span className="dashboard__role-tag">Customer Portal</span>
           <h1>Explore & Rate Stores</h1>
           <p>
-            Welcome, <strong>{user?.name}</strong>! Discover local stores, leave authentic reviews, and bookmark your favorites.
+            Welcome, <strong>{user?.name}</strong>! Discover verified local stores, leave authentic reviews, and bookmark your favorites.
           </p>
         </div>
         <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -277,7 +326,7 @@ const UserDashboard = () => {
       )}
 
       {/* Category Filter Chips Bar */}
-      <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.25rem' }}>
         {STORE_CATEGORIES.map((cat) => {
           const isActive = filters.category === cat;
           return (
@@ -287,7 +336,7 @@ const UserDashboard = () => {
               onClick={() => handleCategorySelect(cat)}
               className="btn btn--sm"
               style={{
-                background: isActive ? 'var(--gradient-primary)' : 'rgba(255, 255, 255, 0.85)',
+                background: isActive ? 'var(--gradient-primary)' : 'var(--color-card-bg)',
                 color: isActive ? '#ffffff' : 'var(--color-foreground)',
                 boxShadow: isActive ? 'var(--shadow-clay-button)' : 'var(--shadow-clay-card)',
                 borderRadius: '16px',
@@ -295,13 +344,13 @@ const UserDashboard = () => {
                 fontWeight: 800,
               }}
             >
-              {cat === 'All' ? '🏬 All Stores' : cat}
+              {cat === 'All' ? '🏬 All Stores' : `${getCategoryIcon(cat)} ${cat}`}
             </button>
           );
         })}
       </div>
 
-      {/* Search & Sort Panel */}
+      {/* Search & Sort Panel with Minimum Rating Chips */}
       <section className="filter-panel">
         <div className="filter-grid">
           <div className="filter-item">
@@ -348,7 +397,36 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        {/* Rating Score Chips & Favorites Checkbox */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.25rem', flexWrap: 'wrap', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-muted)' }}>Rating Filter:</span>
+            {['all', '4.0', '4.5'].map((r) => {
+              const active = filters.minRating === r;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => handleMinRatingSelect(r)}
+                  style={{
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '12px',
+                    border: 'none',
+                    fontFamily: 'var(--font-heading)',
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    background: active ? 'var(--gradient-amber)' : 'var(--color-input-bg)',
+                    color: active ? '#ffffff' : 'var(--color-foreground)',
+                    boxShadow: active ? 'var(--shadow-clay-orb-amber)' : 'var(--shadow-clay-pressed)',
+                  }}
+                >
+                  {r === 'all' ? '⭐ Any Rating' : `⭐ ${r}+ Stars`}
+                </button>
+              );
+            })}
+          </div>
+
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '0.9rem' }}>
             <input
               type="checkbox"
@@ -357,127 +435,148 @@ const UserDashboard = () => {
               onChange={handleFilterChange}
               style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--color-accent-pink)' }}
             />
-            <span>❤️ Show Saved Favorites Only ({favorites.length})</span>
+            <span>❤️ Saved Favorites ({favorites.length})</span>
           </label>
 
-          {(filters.name || filters.address || filters.category !== 'All' || filters.favoritesOnly) && (
+          {(filters.name || filters.address || filters.category !== 'All' || filters.minRating !== 'all' || filters.favoritesOnly) && (
             <button
               type="button"
               className="btn btn--outline btn--sm"
               onClick={handleResetFilters}
             >
-              ✕ Clear Filters
+              ✕ Reset All Filters
             </button>
           )}
         </div>
       </section>
 
-      {/* Stores Grid / Cards Layout */}
-      {loading ? (
-        <div className="stores-loading-state">
-          <span className="spinner" />
-          <p>Loading registered stores…</p>
-        </div>
-      ) : stores.length === 0 ? (
-        <div className="empty-state-card">
-          <div className="empty-state-icon">🏬</div>
-          <h3>No Stores Found</h3>
-          <p>No registered businesses matched your current search filters.</p>
-          {(filters.name || filters.address || filters.category !== 'All' || filters.favoritesOnly) && (
-            <Button variant="outline" size="sm" onClick={handleResetFilters} style={{ marginTop: '1rem' }}>
-              Reset Filters
-            </Button>
-          )}
-        </div>
-      ) : (
-        <section className="stores-grid">
-          {stores.map((s) => {
+      {/* Stores Grid / Cards Layout with Shimmer Skeletons */}
+      <section className="stores-grid">
+        {loading ? (
+          <SkeletonCard count={6} />
+        ) : stores.length === 0 ? (
+          <div className="empty-state-card" style={{ gridColumn: '1 / -1' }}>
+            <div className="empty-state-icon">🏬</div>
+            <h3>No Stores Found</h3>
+            <p>No registered businesses matched your current search filters.</p>
+            {(filters.name || filters.address || filters.category !== 'All' || filters.minRating !== 'all' || filters.favoritesOnly) && (
+              <Button variant="outline" size="sm" onClick={handleResetFilters} style={{ marginTop: '1rem' }}>
+                Reset Filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          stores.map((s) => {
             const hasUserRated = s.user_rating !== null && s.user_rating !== undefined;
             const isFav = favorites.includes(s.id);
+            const isTopRated = Number(s.average_rating) >= 4.8;
+            const isPopular = Number(s.total_ratings) >= 3;
 
             return (
               <article key={s.id} className="store-card">
-                <div>
-                  <div className="store-card__header">
-                    <div className="store-card__icon">🏪</div>
-                    <div className="store-card__title-wrap" style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-                        <h2 className="store-card__name">{s.name}</h2>
-                        <button
-                          type="button"
-                          onClick={() => toggleFavorite(s.id)}
-                          title={isFav ? 'Remove from favorites' : 'Save to favorites'}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            fontSize: '1.3rem',
-                            cursor: 'pointer',
-                            padding: '0.2rem',
-                            lineHeight: 1,
-                          }}
-                        >
-                          {isFav ? '❤️' : '🤍'}
-                        </button>
-                      </div>
-                      <span className="badge badge--user" style={{ fontSize: '0.75rem', marginTop: '0.35rem' }}>
-                        {s.category || 'General'}
-                      </span>
-                      <p className="store-card__address">📍 {s.address}</p>
-                    </div>
+                {/* Visual Category Cover Banner */}
+                <div className={`store-card__banner ${getCategoryBannerClass(s.category)}`}>
+                  <span className="store-card__banner-badge">
+                    {getCategoryIcon(s.category)} {s.category || 'General'}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="status-dot--open" style={{ background: 'rgba(255,255,255,0.9)', padding: '0.2rem 0.5rem', borderRadius: '10px' }}>
+                      Open Today
+                    </span>
                   </div>
+                </div>
 
-                  <div className="store-card__body">
-                    {/* Overall Store Rating Box */}
-                    <div className="store-rating-box">
-                      <div className="store-rating-box__top">
-                        <span className="store-metric-label">Overall Rating</span>
-                        <span className="store-metric-reviews">
-                          {s.total_ratings} {s.total_ratings === 1 ? 'review' : 'reviews'}
-                        </span>
+                <div className="store-card__content">
+                  <div>
+                    <div className="store-card__header">
+                      <div className="store-card__icon">{getCategoryIcon(s.category)}</div>
+                      <div className="store-card__title-wrap" style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                          <h2 className="store-card__name">{s.name}</h2>
+                          <button
+                            type="button"
+                            onClick={() => toggleFavorite(s.id)}
+                            title={isFav ? 'Remove from favorites' : 'Save to favorites'}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              fontSize: '1.3rem',
+                              cursor: 'pointer',
+                              padding: '0.2rem',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {isFav ? '❤️' : '🤍'}
+                          </button>
+                        </div>
+
+                        {/* Trust Badges */}
+                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+                          {isTopRated && (
+                            <span className="trust-badge trust-badge--top-rated">🏆 Top Rated</span>
+                          )}
+                          {isPopular && (
+                            <span className="trust-badge" style={{ background: '#fce7f3', color: '#9d174d' }}>🔥 Popular</span>
+                          )}
+                        </div>
+
+                        <p className="store-card__address">📍 {s.address}</p>
                       </div>
-                      <div className="store-rating-box__bottom">
-                        <StarRating value={s.average_rating} size="sm" />
-                        <div className="store-score-pill">
-                          <strong>{s.average_rating > 0 ? s.average_rating.toFixed(1) : '0.0'}</strong>
-                          <span className="store-score-pill__max">/ 5.0</span>
+                    </div>
+
+                    <div className="store-card__body">
+                      {/* Overall Store Rating Box */}
+                      <div className="store-rating-box">
+                        <div className="store-rating-box__top">
+                          <span className="store-metric-label">Overall Score</span>
+                          <span className="store-metric-reviews">
+                            {s.total_ratings} {s.total_ratings === 1 ? 'review' : 'reviews'}
+                          </span>
+                        </div>
+                        <div className="store-rating-box__bottom">
+                          <StarRating value={s.average_rating} size="sm" />
+                          <div className="store-score-pill">
+                            <strong>{s.average_rating > 0 ? Number(s.average_rating).toFixed(1) : '0.0'}</strong>
+                            <span className="store-score-pill__max">/ 5.0</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Authenticated User Rating Status */}
+                      <div className="store-user-rating-box">
+                        <span className="store-metric-label">Your Rating:</span>
+                        <div className="store-user-rating-val">
+                          {hasUserRated ? (
+                            <div className="my-rating-badge">
+                              <StarRating value={s.user_rating} size="xs" />
+                              <span className="my-rating-text">
+                                <strong>{s.user_rating}</strong> / 5
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="unrated-badge">Not Rated Yet</span>
+                          )}
                         </div>
                       </div>
                     </div>
-
-                    {/* Authenticated User Rating Status */}
-                    <div className="store-user-rating-box">
-                      <span className="store-metric-label">Your Rating:</span>
-                      <div className="store-user-rating-val">
-                        {hasUserRated ? (
-                          <div className="my-rating-badge">
-                            <StarRating value={s.user_rating} size="xs" />
-                            <span className="my-rating-text">
-                              <strong>{s.user_rating}</strong> / 5
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="unrated-badge">Not Rated Yet</span>
-                        )}
-                      </div>
-                    </div>
                   </div>
-                </div>
 
-                <div className="store-card__footer">
-                  <Button
-                    variant={hasUserRated ? 'outline' : 'primary'}
-                    size="sm"
-                    fullWidth
-                    onClick={() => handleOpenRatingModal(s)}
-                  >
-                    {hasUserRated ? '✏️ Modify Your Rating' : '⭐ Rate This Store'}
-                  </Button>
+                  <div className="store-card__footer">
+                    <Button
+                      variant={hasUserRated ? 'outline' : 'primary'}
+                      size="sm"
+                      fullWidth
+                      onClick={() => handleOpenRatingModal(s)}
+                    >
+                      {hasUserRated ? '✏️ Modify Your Rating' : '⭐ Rate This Store'}
+                    </Button>
+                  </div>
                 </div>
               </article>
             );
-          })}
-        </section>
-      )}
+          })
+        )}
+      </section>
 
       {/* Pagination Footer */}
       {!loading && pagination.total > 0 && (
@@ -539,7 +638,7 @@ const UserDashboard = () => {
                   value={ratingComment}
                   onChange={(e) => setRatingComment(e.target.value)}
                   className="form-input"
-                  style={{ height: 'auto', padding: '0.75rem 1.25rem' }}
+                  style={{ height: 'auto', padding: '0.75rem 1.25rem', borderRadius: '18px' }}
                 />
                 <span className="form-helper-text" style={{ textAlign: 'right', display: 'block' }}>
                   {ratingComment.length}/500 characters
@@ -559,7 +658,7 @@ const UserDashboard = () => {
                 </div>
                 <div className="summary-row">
                   <span>Current Overall:</span>
-                  <span>{selectedStore.average_rating > 0 ? `${selectedStore.average_rating.toFixed(1)} / 5.0 (${selectedStore.total_ratings} reviews)` : 'No ratings yet'}</span>
+                  <span>{selectedStore.average_rating > 0 ? `${Number(selectedStore.average_rating).toFixed(1)} / 5.0 (${selectedStore.total_ratings} reviews)` : 'No ratings yet'}</span>
                 </div>
               </div>
             </div>
@@ -601,15 +700,15 @@ const UserDashboard = () => {
               You haven&apos;t rated any stores yet. Browse the catalog and leave your first review!
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '350px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '380px', overflowY: 'auto' }}>
               {myRatingsHistory.map((item) => (
                 <div
                   key={item.id}
                   style={{
-                    padding: '0.85rem 1rem',
+                    padding: '1rem',
                     background: 'var(--color-input-bg)',
                     boxShadow: 'var(--shadow-clay-pressed)',
-                    borderRadius: '16px',
+                    borderRadius: '18px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
@@ -620,11 +719,23 @@ const UserDashboard = () => {
                     </div>
                   </div>
                   {item.comment && (
-                    <p style={{ fontSize: '0.85rem', fontStyle: 'italic', margin: '0.25rem 0', color: 'var(--color-foreground)' }}>
+                    <p style={{ fontSize: '0.85rem', fontStyle: 'italic', margin: '0.35rem 0', color: 'var(--color-foreground)' }}>
                       &ldquo;{item.comment}&rdquo;
                     </p>
                   )}
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                  {/* Store Owner Official Response */}
+                  {item.owner_reply && (
+                    <div className="owner-reply-bubble">
+                      <strong>🏬 Store Response:</strong>
+                      <p>&ldquo;{item.owner_reply}&rdquo;</p>
+                      {item.owner_replied_at && (
+                        <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)' }}>
+                          Replied on {new Date(item.owner_replied_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', display: 'block', marginTop: '0.35rem' }}>
                     Reviewed on {new Date(item.created_at).toLocaleDateString()}
                   </span>
                 </div>

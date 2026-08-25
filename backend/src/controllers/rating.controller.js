@@ -61,3 +61,20 @@ export const getRatingsByStore = asyncHandler(async (req, res) => {
     message: 'Ratings retrieved successfully.',
   });
 });
+
+/**
+ * POST /api/v1/ratings/:id/reply
+ * STORE_OWNER only — post an official reply to a customer review.
+ */
+export const replyToRating = asyncHandler(async (req, res) => {
+  const { reply } = req.body;
+  const updated = await ratingService.replyToRating(
+    req.params.id,
+    reply,
+    req.user.id
+  );
+  return sendSuccess(res, {
+    data: updated,
+    message: 'Store owner reply posted successfully.',
+  });
+});

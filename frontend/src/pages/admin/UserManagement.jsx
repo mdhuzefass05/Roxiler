@@ -11,7 +11,9 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import useDebounce from '../../hooks/useDebounce';
+import useToast from '../../hooks/useToast';
 import {
   validateName,
   validateEmail,
@@ -30,8 +32,11 @@ const INITIAL_FORM = {
 };
 
 const UserManagement = () => {
+  const toast = useToast();
+
   // ── Table State ────────────────────────────────────────────────────
   const [users, setUsers] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -57,20 +62,20 @@ const UserManagement = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [successMsg, setSuccessMsg] = useState(null);
 
-  // ── Modal States ───────────────────────────────────────────────────
+  // ── Modal State: Add User ──────────────────────────────────────────
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState(INITIAL_FORM);
   const [addErrors, setAddErrors] = useState({});
   const [addLoading, setAddLoading] = useState(false);
   const [addApiError, setAddApiError] = useState(null);
 
+  // ── Modal State: User Details ──────────────────────────────────────
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // ── Data Fetching ──────────────────────────────────────────────────
+  // ── Fetch Users ────────────────────────────────────────────────────
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -100,7 +105,8 @@ const UserManagement = () => {
       setPagination(meta);
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Failed to load users. Please try again.'
+        err.response?.data?.message ||
+        'Failed to load users. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -120,7 +126,7 @@ const UserManagement = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // ── Handlers ───────────────────────────────────────────────────────
+  // ── Filter Handlers ────────────────────────────────────────────────
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -129,7 +135,6 @@ const UserManagement = () => {
 
   const handleResetFilters = () => {
     setFilters({ name: '', email: '', address: '', role: '' });
-    setSort({ column: 'created_at', order: 'desc' });
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
@@ -149,15 +154,38 @@ const UserManagement = () => {
     setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
   };
 
-  // ── Details Modal ──────────────────────────────────────────────────
+  // ── Multi-Selection Handlers ───────────────────────────────────────
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === users.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(users.map((u) => u.id));
+    }
+  };
+
+  const handleToggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleExportSelected = () => {
+    const selectedUsers = users.filter((u) => selectedIds.includes(u.id));
+    if (selectedUsers.length === 0) return;
+    exportUsersCsv(selectedUsers);
+    toast.success(`Exported ${selectedUsers.length} selected users to CSV!`);
+    setSelectedIds([]);
+  };
+
+  // ── View Details Flow ──────────────────────────────────────────────
   const handleViewDetails = async (userId) => {
     setIsDetailModalOpen(true);
     setDetailLoading(true);
     try {
       const res = await getUserByIdApi(userId);
       setSelectedUser(res?.data || null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch user details.');
+    } catch {
+      setError('Failed to fetch user details.');
       setIsDetailModalOpen(false);
     } finally {
       setDetailLoading(false);
@@ -181,11 +209,11 @@ const UserManagement = () => {
     const emailErr = validateEmail(addForm.email);
     if (emailErr) errs.email = emailErr;
 
-    const passErr = validatePassword(addForm.password);
-    if (passErr) errs.password = passErr;
+    const addressErr = validateAddress(addForm.address);
+    if (addressErr) errs.address = addressErr;
 
-    const addrErr = validateAddress(addForm.address);
-    if (addrErr) errs.address = addrErr;
+    const passwordErr = validatePassword(addForm.password);
+    if (passwordErr) errs.password = passwordErr;
 
     setAddErrors(errs);
     return Object.keys(errs).length === 0;
@@ -201,8 +229,7 @@ const UserManagement = () => {
       await createUserApi(addForm);
       setIsAddModalOpen(false);
       setAddForm(INITIAL_FORM);
-      setSuccessMsg(`User "${addForm.name}" created successfully!`);
-      setTimeout(() => setSuccessMsg(null), 5000);
+      toast.success(`User "${addForm.name}" created successfully!`);
       fetchUsers();
     } catch (err) {
       setAddApiError(
@@ -216,32 +243,30 @@ const UserManagement = () => {
   };
 
   // ── Delete Flow ────────────────────────────────────────────────────
-  const handleDeleteUser = async (user) => {
+  const handleDeleteUser = async (userToDelete) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete user "${user.name}" (${user.email})?`
+      `Are you sure you want to delete user "${userToDelete.name}" (${userToDelete.email})?`
     );
     if (!confirmed) return;
 
     try {
-      await deleteUserApi(user.id);
-      setSuccessMsg(`User "${user.name}" was deleted successfully.`);
-      setTimeout(() => setSuccessMsg(null), 5000);
+      await deleteUserApi(userToDelete.id);
+      toast.success(`User "${userToDelete.name}" was deleted successfully.`);
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete user.');
+      toast.error(err.response?.data?.message || 'Failed to delete user.');
     }
   };
 
-  // ── Render Helpers ─────────────────────────────────────────────────
   const renderRoleBadge = (role) => {
     switch (role) {
       case ROLES.SYSTEM_ADMIN:
-        return <span className="role-pill role-pill--admin">System Admin</span>;
+        return <span className="badge badge--admin">System Admin</span>;
       case ROLES.STORE_OWNER:
-        return <span className="role-pill role-pill--owner">Store Owner</span>;
+        return <span className="badge badge--owner">Store Owner</span>;
       case ROLES.NORMAL_USER:
       default:
-        return <span className="role-pill role-pill--user">Normal User</span>;
+        return <span className="badge badge--user">Normal User</span>;
     }
   };
 
@@ -249,6 +274,8 @@ const UserManagement = () => {
     if (sort.column !== column) return <span className="sort-icon">⇅</span>;
     return <span className="sort-icon active">{sort.order === 'asc' ? '▲' : '▼'}</span>;
   };
+
+  const isAllSelected = users.length > 0 && selectedIds.length === users.length;
 
   return (
     <main className="dashboard-page">
@@ -259,7 +286,7 @@ const UserManagement = () => {
             ← Back to Dashboard
           </Link>
           <h1>User Management</h1>
-          <p>Search, filter, sort, inspect, and add platform users</p>
+          <p>Search, filter, sort, inspect, and register platform users</p>
         </div>
         <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Button
@@ -268,9 +295,10 @@ const UserManagement = () => {
             onClick={() => {
               if (users.length === 0) return;
               exportUsersCsv(users);
+              toast.success(`Exported ${users.length} users to CSV!`);
             }}
           >
-            📥 Export CSV
+            📥 Export All CSV
           </Button>
           <Button
             variant="primary"
@@ -286,13 +314,6 @@ const UserManagement = () => {
           </Button>
         </div>
       </div>
-
-      {/* Success Notification */}
-      {successMsg && (
-        <div className="alert alert--success" role="alert">
-          {successMsg}
-        </div>
-      )}
 
       {/* Error Alert */}
       {error && (
@@ -313,7 +334,7 @@ const UserManagement = () => {
               id="filter-name"
               name="name"
               type="text"
-              placeholder="Search name…"
+              placeholder="Search full name…"
               value={filters.name}
               onChange={handleFilterChange}
               className="form-input form-input--sm"
@@ -326,7 +347,7 @@ const UserManagement = () => {
               id="filter-email"
               name="email"
               type="text"
-              placeholder="Search email…"
+              placeholder="Search email address…"
               value={filters.email}
               onChange={handleFilterChange}
               className="form-input form-input--sm"
@@ -381,6 +402,15 @@ const UserManagement = () => {
         <table className="data-table">
           <thead>
             <tr>
+              <th style={{ width: '40px' }}>
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={handleToggleSelectAll}
+                  aria-label="Select all users on page"
+                  style={{ width: '1.1rem', height: '1.1rem', accentColor: 'var(--color-accent-violet)' }}
+                />
+              </th>
               <th onClick={() => handleSort('name')} className="sortable-header">
                 Name {renderSortIndicator('name')}
               </th>
@@ -398,69 +428,99 @@ const UserManagement = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan="5" className="table-loading">
-                  <div className="spinner-wrapper">
-                    <span className="spinner" />
-                  </div>
-                </td>
-              </tr>
+              <SkeletonTable rows={5} cols={6} />
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan="5" className="table-empty">
+                <td colSpan="6" className="table-empty">
                   <p>No users found matching your search criteria.</p>
                 </td>
               </tr>
             ) : (
-              users.map((u) => (
-                <tr key={u.id}>
-                  <td className="table-cell-bold">{u.name}</td>
-                  <td>{u.email}</td>
-                  <td className="table-cell-truncate" title={u.address}>
-                    {u.address || '—'}
-                  </td>
-                  <td>{renderRoleBadge(u.role)}</td>
-                  <td>
-                    <div className="table-actions">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetails(u.id)}
-                      >
-                        Details
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDeleteUser(u)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              users.map((u) => {
+                const isSelected = selectedIds.includes(u.id);
+                return (
+                  <tr key={u.id} style={{ background: isSelected ? 'rgba(124, 58, 237, 0.06)' : undefined }}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(u.id)}
+                        aria-label={`Select ${u.name}`}
+                        style={{ width: '1.1rem', height: '1.1rem', accentColor: 'var(--color-accent-violet)' }}
+                      />
+                    </td>
+                    <td className="table-cell-bold">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="customer-avatar-badge">
+                          {u.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                        <span>{u.name}</span>
+                      </div>
+                    </td>
+                    <td>{u.email}</td>
+                    <td className="table-cell-truncate" title={u.address}>
+                      {u.address || '—'}
+                    </td>
+                    <td>{renderRoleBadge(u.role)}</td>
+                    <td>
+                      <div className="action-btn-group">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(u.id)}
+                        >
+                          Details
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDeleteUser(u)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
 
-        {/* Reusable Pagination Component */}
-        <Pagination
-          page={pagination.page}
-          limit={pagination.limit}
-          total={pagination.total}
-          totalPages={pagination.totalPages}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-          itemLabel="users"
-        />
+        {/* Pagination Footer */}
+        {!loading && pagination.total > 0 && (
+          <Pagination
+            page={pagination.page}
+            limit={pagination.limit}
+            total={pagination.total}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            itemLabel="users"
+          />
+        )}
       </section>
 
-      {/* ── Add User Modal ────────────────────────────────────────────── */}
+      {/* Floating Bulk Action Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="bulk-toolbar">
+          <div className="bulk-toolbar__inner">
+            <span style={{ fontWeight: 800 }}>📌 {selectedIds.length} users selected</span>
+            <Button variant="primary" size="sm" onClick={handleExportSelected}>
+              📥 Export Selected ({selectedIds.length})
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
+              ✕ Deselect All
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add User Modal ──────────────────────────────────────────────── */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add New User"
+        title="Add New Platform User"
       >
         <form onSubmit={handleAddSubmit} noValidate>
           {addApiError && (
@@ -472,8 +532,9 @@ const UserManagement = () => {
           <Input
             id="add-name"
             name="name"
+            type="text"
             label="Full Name"
-            placeholder="Johnathan Doe Administrator"
+            placeholder="Johnathan Doe Customer"
             value={addForm.name}
             onChange={handleAddChange}
             error={addErrors.name}
@@ -498,19 +559,20 @@ const UserManagement = () => {
             name="password"
             type="password"
             label="Password"
-            placeholder="••••••••"
+            placeholder="Min 8 chars, 1 uppercase, 1 special char"
             value={addForm.password}
             onChange={handleAddChange}
             error={addErrors.password}
-            helperText="8–16 chars, 1+ uppercase letter, 1+ special char"
+            helperText="8–16 chars, 1 uppercase, 1 special character"
             required
           />
 
           <Input
             id="add-address"
             name="address"
+            type="text"
             label="Address"
-            placeholder="123 Corporate Way, City, State"
+            placeholder="123 Shopping Avenue, Suite 400"
             value={addForm.address}
             onChange={handleAddChange}
             error={addErrors.address}
@@ -529,8 +591,8 @@ const UserManagement = () => {
               onChange={handleAddChange}
               className="form-input form-select"
             >
-              <option value={ROLES.NORMAL_USER}>Normal User</option>
-              <option value={ROLES.STORE_OWNER}>Store Owner (for store ownership)</option>
+              <option value={ROLES.NORMAL_USER}>Normal User (Customer)</option>
+              <option value={ROLES.STORE_OWNER}>Store Owner</option>
               <option value={ROLES.SYSTEM_ADMIN}>System Administrator</option>
             </select>
           </div>
@@ -543,96 +605,69 @@ const UserManagement = () => {
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={addLoading}
-            >
+            <Button type="submit" variant="primary" loading={addLoading}>
               Create User
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* ── User Details Modal ────────────────────────────────────────── */}
+      {/* ── User Details Modal ──────────────────────────────────────────── */}
       <Modal
         isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        title="User Details"
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedUser(null);
+        }}
+        title="User Account Details"
       >
         {detailLoading ? (
-          <div className="spinner-wrapper">
+          <div className="spinner-wrapper" style={{ padding: '2rem' }}>
             <span className="spinner" />
           </div>
         ) : selectedUser ? (
-          <div className="user-details-card">
-            <div className="user-details-header">
-              <div className="user-details-avatar">
-                {selectedUser.name?.charAt(0)?.toUpperCase()}
-              </div>
-              <div>
-                <h3>{selectedUser.name}</h3>
-                <p className="user-details-email">{selectedUser.email}</p>
-                <div style={{ marginTop: '4px' }}>
-                  {renderRoleBadge(selectedUser.role)}
-                </div>
-              </div>
-            </div>
-
-            <div className="user-details-body">
-              <div className="detail-row">
-                <span className="detail-label">User ID:</span>
+          <div>
+            <div className="detail-modal-grid">
+              <div className="detail-field">
+                <span className="detail-label">User ID</span>
                 <span className="detail-val">#{selectedUser.id}</span>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Address:</span>
+              <div className="detail-field">
+                <span className="detail-label">Role</span>
+                <span className="detail-val">{renderRoleBadge(selectedUser.role)}</span>
+              </div>
+              <div className="detail-field" style={{ gridColumn: 'span 2' }}>
+                <span className="detail-label">Full Name</span>
+                <span className="detail-val">{selectedUser.name}</span>
+              </div>
+              <div className="detail-field" style={{ gridColumn: 'span 2' }}>
+                <span className="detail-label">Email Address</span>
+                <span className="detail-val">{selectedUser.email}</span>
+              </div>
+              <div className="detail-field" style={{ gridColumn: 'span 2' }}>
+                <span className="detail-label">Address</span>
                 <span className="detail-val">{selectedUser.address || '—'}</span>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Registered On:</span>
-                <span className="detail-val">
-                  {new Date(selectedUser.created_at).toLocaleDateString()}
-                </span>
-              </div>
+              {selectedUser.role === ROLES.STORE_OWNER && selectedUser.store && (
+                <div className="detail-field" style={{ gridColumn: 'span 2' }}>
+                  <span className="detail-label">Owned Store</span>
+                  <span className="detail-val">
+                    {selectedUser.store.name} — Rating: {selectedUser.store.rating || 'N/A'} ★
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Store Owner specific analytics */}
-            {selectedUser.role === ROLES.STORE_OWNER && (
-              <div className="owner-store-summary">
-                <h4>🏪 Owned Store & Rating Overview</h4>
-                {selectedUser.store ? (
-                  <div className="owner-store-box">
-                    <div className="owner-store-title">
-                      {selectedUser.store.name}
-                    </div>
-                    <p className="owner-store-addr">
-                      📍 {selectedUser.store.address}
-                    </p>
-                    <div className="owner-store-stats">
-                      <div className="owner-stat-pill">
-                        <StarRating value={selectedUser.store.average_rating} size="sm" />
-                        <span><strong>{selectedUser.store.average_rating.toFixed(2)} / 5</strong></span>
-                      </div>
-                      <div className="owner-stat-pill">
-                        👥 Total Ratings: <strong>{selectedUser.store.total_ratings}</strong>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="no-store-notice">
-                    No store has been assigned to this owner yet.
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="modal-actions" style={{ marginTop: 'var(--space-xl)' }}>
+            <div className="modal-actions">
               <Button
+                type="button"
                 variant="outline"
-                fullWidth
-                onClick={() => setIsDetailModalOpen(false)}
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  setSelectedUser(null);
+                }}
               >
-                Close Details
+                Close
               </Button>
             </div>
           </div>

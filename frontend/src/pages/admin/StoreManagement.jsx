@@ -7,6 +7,7 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import useDebounce from '../../hooks/useDebounce';
 import useToast from '../../hooks/useToast';
 import { exportStoresCsv } from '../../utils/export';
@@ -42,6 +43,7 @@ const StoreManagement = () => {
 
   // ── Table State ────────────────────────────────────────────────────
   const [stores, setStores] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -182,6 +184,29 @@ const StoreManagement = () => {
   const renderSortIndicator = (column) => {
     if (sort.column !== column) return <span className="sort-icon">⇅</span>;
     return <span className="sort-icon active">{sort.order === 'asc' ? '▲' : '▼'}</span>;
+  };
+
+  // ── Multi-Selection Handlers ───────────────────────────────────────
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === stores.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(stores.map((s) => s.id));
+    }
+  };
+
+  const handleToggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleExportSelected = () => {
+    const selectedStores = stores.filter((s) => selectedIds.includes(s.id));
+    if (selectedStores.length === 0) return;
+    exportStoresCsv(selectedStores);
+    toast.success(`Exported ${selectedStores.length} selected stores to CSV!`);
+    setSelectedIds([]);
   };
 
   // ── Add Store Handlers ─────────────────────────────────────────────
@@ -353,6 +378,8 @@ const StoreManagement = () => {
     toast.success(`Exported ${stores.length} stores to CSV!`);
   };
 
+  const isAllSelected = stores.length > 0 && selectedIds.length === stores.length;
+
   return (
     <main className="dashboard-page">
       {/* Header */}
@@ -364,7 +391,7 @@ const StoreManagement = () => {
         </div>
         <div className="dashboard__actions" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Button variant="outline" size="sm" onClick={handleExportCsv}>
-            📥 Export CSV
+            📥 Export All CSV
           </Button>
           <Button variant="primary" size="sm" onClick={handleOpenAddModal}>
             + Register New Store
@@ -474,6 +501,15 @@ const StoreManagement = () => {
         <table className="data-table">
           <thead>
             <tr>
+              <th style={{ width: '40px' }}>
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={handleToggleSelectAll}
+                  aria-label="Select all stores on page"
+                  style={{ width: '1.1rem', height: '1.1rem', accentColor: 'var(--color-accent-violet)' }}
+                />
+              </th>
               <th onClick={() => handleSort('name')} className="sortable-header">
                 Store Name {renderSortIndicator('name')}
               </th>
@@ -490,17 +526,10 @@ const StoreManagement = () => {
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan="6" className="table-loading">
-                  <div className="spinner-wrapper">
-                    <span className="spinner" />
-                    <p>Loading registered stores…</p>
-                  </div>
-                </td>
-              </tr>
+              <SkeletonTable rows={5} cols={7} />
             ) : stores.length === 0 ? (
               <tr>
-                <td colSpan="6" className="table-empty">
+                <td colSpan="7" className="table-empty">
                   <div className="empty-state-card" style={{ padding: '2rem' }}>
                     <div className="empty-state-icon">🏬</div>
                     <h3>No Stores Found</h3>
@@ -509,62 +538,74 @@ const StoreManagement = () => {
                 </td>
               </tr>
             ) : (
-              stores.map((s) => (
-                <tr key={s.id}>
-                  <td className="table-cell-bold">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="customer-avatar-badge" style={{ background: 'var(--gradient-secondary)' }}>
-                        🏬
+              stores.map((s) => {
+                const isSelected = selectedIds.includes(s.id);
+                return (
+                  <tr key={s.id} style={{ background: isSelected ? 'rgba(124, 58, 237, 0.06)' : undefined }}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(s.id)}
+                        aria-label={`Select ${s.name}`}
+                        style={{ width: '1.1rem', height: '1.1rem', accentColor: 'var(--color-accent-violet)' }}
+                      />
+                    </td>
+                    <td className="table-cell-bold">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="customer-avatar-badge" style={{ background: 'var(--gradient-secondary)' }}>
+                          🏬
+                        </span>
+                        <span>{s.name}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="badge badge--user" style={{ fontSize: '0.75rem' }}>
+                        {s.category || 'General'}
                       </span>
-                      <span>{s.name}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="badge badge--user" style={{ fontSize: '0.75rem' }}>
-                      {s.category || 'General'}
-                    </span>
-                  </td>
-                  <td>{s.email}</td>
-                  <td className="table-cell-truncate" title={s.address}>
-                    {s.address}
-                  </td>
-                  <td>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <StarRating value={s.average_rating} size="sm" />
-                      <strong>{s.average_rating ? s.average_rating.toFixed(1) : '0.0'}</strong>
-                      <span className="text-muted" style={{ fontSize: '0.8rem' }}>({s.total_ratings})</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="action-btn-group">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenDetailModal(s)}
-                        title="View Details"
-                      >
-                        👁 View
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleOpenEditModal(s)}
-                        title="Edit Store"
-                      >
-                        ✏ Edit
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleOpenDeleteModal(s)}
-                        title="Delete Store"
-                      >
-                        🗑
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td>{s.email}</td>
+                    <td className="table-cell-truncate" title={s.address}>
+                      {s.address}
+                    </td>
+                    <td>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <StarRating value={s.average_rating} size="sm" />
+                        <strong>{s.average_rating ? Number(s.average_rating).toFixed(1) : '0.0'}</strong>
+                        <span className="text-muted" style={{ fontSize: '0.8rem' }}>({s.total_ratings})</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="action-btn-group">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDetailModal(s)}
+                          title="View Details"
+                        >
+                          👁 View
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleOpenEditModal(s)}
+                          title="Edit Store"
+                        >
+                          ✏ Edit
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleOpenDeleteModal(s)}
+                          title="Delete Store"
+                        >
+                          🗑
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -582,6 +623,21 @@ const StoreManagement = () => {
           />
         )}
       </div>
+
+      {/* Floating Bulk Action Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="bulk-toolbar">
+          <div className="bulk-toolbar__inner">
+            <span style={{ fontWeight: 800 }}>📌 {selectedIds.length} stores selected</span>
+            <Button variant="primary" size="sm" onClick={handleExportSelected}>
+              📥 Export Selected ({selectedIds.length})
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>
+              ✕ Deselect All
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── Add Store Modal ─────────────────────────────────────────────── */}
       <Modal
@@ -853,7 +909,7 @@ const StoreManagement = () => {
                 <span className="detail-label">Overall Rating</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                   <StarRating value={selectedStore.average_rating} size="sm" />
-                  <strong>{selectedStore.average_rating ? selectedStore.average_rating.toFixed(1) : '0.0'}</strong>
+                  <strong>{selectedStore.average_rating ? Number(selectedStore.average_rating).toFixed(1) : '0.0'}</strong>
                 </div>
               </div>
               <div className="detail-field">

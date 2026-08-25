@@ -6,6 +6,8 @@ import useToast from '../../hooks/useToast';
 import Button from '../../components/common/Button';
 import Pagination from '../../components/common/Pagination';
 import StarRating from '../../components/common/StarRating';
+import SkeletonTable from '../../components/common/SkeletonTable';
+import OwnerReplyModal from '../../components/common/OwnerReplyModal';
 import ChangePasswordModal from '../../components/common/ChangePasswordModal';
 import EditProfileModal from '../../components/common/EditProfileModal';
 import { exportReviewsCsv } from '../../utils/export';
@@ -49,6 +51,10 @@ const OwnerDashboard = () => {
   const [error, setError] = useState(null);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // ── Review Response Modal State ────────────────────────────────────
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+  const [selectedReviewForReply, setSelectedReviewForReply] = useState(null);
 
   // ── Initial Store & Stats Load ─────────────────────────────────────
   const fetchStoreProfileAndStats = useCallback(async () => {
@@ -182,12 +188,25 @@ const OwnerDashboard = () => {
     toast.success(`Exported ${ratings.length} reviews to CSV!`);
   };
 
-  // ── Stats Calculations ─────────────────────────────────────────────
+  const handleOpenReplyModal = (review) => {
+    setSelectedReviewForReply(review);
+    setIsReplyModalOpen(true);
+  };
+
+  // ── Stats & Sentiment Calculations ─────────────────────────────────
   const totalReviews = stats?.total_ratings ?? store?.total_ratings ?? 0;
   const avgRating = stats?.average_rating ?? store?.average_rating ?? 0.0;
   const distribution = stats?.distribution || store?.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   const fiveStarCount = distribution[5] || 0;
   const fiveStarPercent = totalReviews > 0 ? ((fiveStarCount / totalReviews) * 100).toFixed(0) : 0;
+
+  // Sentiment Breakdown
+  const positiveCount = (distribution[5] || 0) + (distribution[4] || 0);
+  const neutralCount = distribution[3] || 0;
+  const negativeCount = (distribution[2] || 0) + (distribution[1] || 0);
+  const positivePct = totalReviews > 0 ? ((positiveCount / totalReviews) * 100).toFixed(0) : 0;
+  const neutralPct = totalReviews > 0 ? ((neutralCount / totalReviews) * 100).toFixed(0) : 0;
+  const negativePct = totalReviews > 0 ? ((negativeCount / totalReviews) * 100).toFixed(0) : 0;
 
   if (loading) {
     return (
@@ -277,7 +296,7 @@ const OwnerDashboard = () => {
           <h3>Average Rating</h3>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
             <p className="stat-card__value">
-              {avgRating > 0 ? avgRating.toFixed(1) : '0.0'}
+              {avgRating > 0 ? Number(avgRating).toFixed(1) : '0.0'}
             </p>
             <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-muted)' }}>/ 5.0</span>
           </div>
@@ -312,6 +331,48 @@ const OwnerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Customer Sentiment Meter ──────────────────────────────────── */}
+      <section className="sentiment-card">
+        <div className="section-header" style={{ marginBottom: '0.5rem' }}>
+          <h2>Customer Sentiment Meter</h2>
+          <p>Holistic distribution of patron satisfaction based on rating scores</p>
+        </div>
+
+        {/* Multi-Segment Sentiment Bar */}
+        <div className="sentiment-bar-track">
+          <div
+            className="sentiment-segment--positive"
+            style={{ width: `${positivePct}%` }}
+            title={`Positive: ${positivePct}% (${positiveCount} reviews)`}
+          />
+          <div
+            className="sentiment-segment--neutral"
+            style={{ width: `${neutralPct}%` }}
+            title={`Neutral: ${neutralPct}% (${neutralCount} reviews)`}
+          />
+          <div
+            className="sentiment-segment--negative"
+            style={{ width: `${negativePct}%` }}
+            title={`Needs Attention: ${negativePct}% (${negativeCount} reviews)`}
+          />
+        </div>
+
+        <div className="sentiment-legend">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.2rem' }}>😍</span>
+            <span><strong>{positivePct}%</strong> Positive ({positiveCount})</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.2rem' }}>😐</span>
+            <span><strong>{neutralPct}%</strong> Neutral ({neutralCount})</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.2rem' }}>🙁</span>
+            <span><strong>{negativePct}%</strong> Needs Attention ({negativeCount})</span>
+          </div>
+        </div>
+      </section>
 
       {/* ── Rating Distribution Progress Bars ─────────────────────────── */}
       <section className="distribution-section">
@@ -351,8 +412,8 @@ const OwnerDashboard = () => {
       <section className="owner-reviews-section">
         <div className="section-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h2>Customer Reviews</h2>
-            <p>All verified users who submitted ratings and comments for your store</p>
+            <h2>Customer Reviews & Feedback</h2>
+            <p>Verified patron ratings, commentary notes, and official store responses</p>
           </div>
           <Button variant="outline" size="sm" onClick={handleExportReviews}>
             📥 Export to CSV
@@ -407,7 +468,7 @@ const OwnerDashboard = () => {
             <thead>
               <tr>
                 <th onClick={() => handleSort('name')} className="sortable-header">
-                  Customer Name {renderSortIndicator('name')}
+                  Customer {renderSortIndicator('name')}
                 </th>
                 <th onClick={() => handleSort('email')} className="sortable-header">
                   Email {renderSortIndicator('email')}
@@ -415,24 +476,19 @@ const OwnerDashboard = () => {
                 <th onClick={() => handleSort('rating')} className="sortable-header">
                   Rating {renderSortIndicator('rating')}
                 </th>
-                <th>Comment / Feedback</th>
+                <th>Feedback & Store Reply</th>
                 <th onClick={() => handleSort('date')} className="sortable-header">
-                  Date Submitted {renderSortIndicator('date')}
+                  Date {renderSortIndicator('date')}
                 </th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {tableLoading ? (
-                <tr>
-                  <td colSpan="5" className="table-loading">
-                    <div className="spinner-wrapper">
-                      <span className="spinner" />
-                    </div>
-                  </td>
-                </tr>
+                <SkeletonTable rows={5} cols={6} />
               ) : ratings.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="table-empty">
+                  <td colSpan="6" className="table-empty">
                     <p>{filters.name || filters.email ? 'No reviews matched your search criteria.' : 'No customer ratings yet.'}</p>
                   </td>
                 </tr>
@@ -458,15 +514,40 @@ const OwnerDashboard = () => {
                     </td>
                     <td>
                       {r.comment ? (
-                        <span style={{ fontStyle: 'italic', fontSize: '0.9rem' }}>&ldquo;{r.comment}&rdquo;</span>
+                        <div style={{ fontStyle: 'italic', fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                          &ldquo;{r.comment}&rdquo;
+                        </div>
                       ) : (
                         <span className="text-muted" style={{ fontSize: '0.85rem' }}>—</span>
+                      )}
+
+                      {/* Store Owner Official Reply */}
+                      {r.owner_reply && (
+                        <div className="owner-reply-bubble">
+                          <strong>🏬 Store Response:</strong>
+                          <p>&ldquo;{r.owner_reply}&rdquo;</p>
+                          {r.owner_replied_at && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)' }}>
+                              Replied on {new Date(r.owner_replied_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td>
                       <span className="text-muted" style={{ fontSize: '0.85rem' }}>
                         {new Date(r.created_at).toLocaleDateString()}
                       </span>
+                    </td>
+                    <td>
+                      <Button
+                        variant={r.owner_reply ? 'outline' : 'secondary'}
+                        size="sm"
+                        onClick={() => handleOpenReplyModal(r)}
+                        title={r.owner_reply ? 'Edit Store Reply' : 'Reply to Customer'}
+                      >
+                        {r.owner_reply ? '✏️ Edit Reply' : '💬 Reply'}
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -488,6 +569,20 @@ const OwnerDashboard = () => {
           )}
         </div>
       </section>
+
+      {/* Reply Modal */}
+      <OwnerReplyModal
+        isOpen={isReplyModalOpen}
+        onClose={() => {
+          setIsReplyModalOpen(false);
+          setSelectedReviewForReply(null);
+        }}
+        review={selectedReviewForReply}
+        onReplied={() => {
+          fetchRatingsTable();
+          fetchStoreProfileAndStats();
+        }}
+      />
 
       {/* Change Password Modal */}
       <ChangePasswordModal
