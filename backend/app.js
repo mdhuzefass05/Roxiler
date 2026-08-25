@@ -13,6 +13,11 @@ import errorMiddleware      from './src/middleware/error.middleware.js';
 
 const app = express();
 
+// ── Reverse Proxy Trust (for rate-limiting behind Nginx / Cloudflare / Load Balancers)
+if (env.nodeEnv === 'production' || process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
+
 // ── Security Headers ──────────────────────────────────────────────────────────
 app.use(helmet());
 

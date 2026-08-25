@@ -18,8 +18,14 @@
  */
 
 import bcrypt        from 'bcryptjs';
-import '../config/env.js';
+import env           from '../config/env.js';
 import { getClient } from './index.js';
+
+if (env.nodeEnv === 'production' && process.env.ALLOW_PROD_SEED !== 'true') {
+  console.error('\n❌ [SECURITY GUARD] Database seeding is blocked in production mode.');
+  console.error('   To force seed in production, set ALLOW_PROD_SEED=true in environment.\n');
+  process.exit(1);
+}
 
 const BCRYPT_ROUNDS = 12;
 
