@@ -62,6 +62,47 @@ export const getRatingDistribution = async (storeId) => {
 };
 
 /**
+ * Find ratings for a store with server-side sorting and pagination.
+ */
+export const findStoreRatingsPaginated = async ({
+  storeId,
+  orderClause = 'ORDER BY r.created_at DESC',
+  limit = 10,
+  offset = 0,
+}) => {
+  const { rows } = await query(
+    `SELECT
+       r.id,
+       r.user_id,
+       r.store_id,
+       r.rating_value,
+       r.created_at,
+       r.updated_at,
+       u.name    AS user_name,
+       u.email   AS user_email,
+       u.address AS user_address
+     FROM ratings r
+     JOIN users u ON u.id = r.user_id
+     WHERE r.store_id = $1
+     ${orderClause}
+     LIMIT $2 OFFSET $3`,
+    [storeId, limit, offset]
+  );
+  return rows;
+};
+
+/**
+ * Count total ratings for a store.
+ */
+export const countStoreRatings = async (storeId) => {
+  const { rows } = await query(
+    'SELECT COUNT(*)::INTEGER AS total FROM ratings WHERE store_id = $1',
+    [storeId]
+  );
+  return rows[0]?.total || 0;
+};
+
+/**
  * Get all ratings submitted by a specific user, joined with store name.
  */
 export const findByUserId = async (userId) => {

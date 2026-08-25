@@ -9,9 +9,10 @@ const router = Router();
 // All store routes require authentication
 router.use(authenticate);
 
-// STORE_OWNER: get their own store
+// STORE_OWNER: get their own store and customer ratings
 // NOTE: must be defined BEFORE /:id to prevent "my-store" matching as an id
 router.get('/my-store', authorize('STORE_OWNER'), storeController.getMyStore);
+router.get('/my-store/ratings', authorize('STORE_OWNER'), storeController.getMyStoreRatings);
 
 // Any authenticated user: browse stores
 router.get( '/',    storeValidator.listStores,  validate, storeController.getAllStores);

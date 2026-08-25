@@ -33,6 +33,19 @@ export const getMyStore = asyncHandler(async (req, res) => {
 });
 
 /**
+ * GET /api/v1/stores/my-store/ratings
+ * STORE_OWNER only — returns paginated customer ratings and reviewer profiles.
+ */
+export const getMyStoreRatings = asyncHandler(async (req, res) => {
+  const result = await storeService.getMyStoreRatings(req.user.id, req.query);
+  return sendSuccess(res, {
+    data: result,
+    meta: result.pagination,
+    message: 'Store customer ratings retrieved successfully.',
+  });
+});
+
+/**
  * GET /api/v1/stores/:id
  */
 export const getStoreById = asyncHandler(async (req, res) => {

@@ -184,3 +184,73 @@ export const getMyStore = async (ownerId) => {
     ratings,
   };
 };
+
+/**
+ * Sort field map for store ratings
+ */
+const RATING_SORT_MAP = {
+  name: 'u.name',
+  user_name: 'u.name',
+  email: 'u.email',
+  user_email: 'u.email',
+  rating: 'r.rating_value',
+  rating_value: 'r.rating_value',
+  date: 'r.created_at',
+  created_at: 'r.created_at',
+};
+
+/**
+ * Get paginated list of ratings for the authenticated STORE_OWNER's store.
+ *
+ * @param {number} ownerId
+ * @param {Object} queryParams - { page, limit, sort, order }
+ * @returns {Promise<{ store: Object|null, ratings: Array, pagination: Object }>}
+ */
+export const getMyStoreRatings = async (ownerId, queryParams = {}) => {
+  const storeRow = await storeModel.findByOwnerId(ownerId);
+  if (!storeRow) {
+    return {
+      store: null,
+      ratings: [],
+      pagination: buildPaginationMeta(0, 1, 10),
+    };
+  }
+
+  const storeId = storeRow.store_id || storeRow.id;
+  const { limit, offset, order, meta } = parsePagination(queryParams);
+
+  const rawSort = queryParams.sort || 'created_at';
+  const sortColumn = RATING_SORT_MAP[rawSort] || 'r.created_at';
+  const orderClause = `ORDER BY ${sortColumn} ${order}`;
+
+  const [total, rows] = await Promise.all([
+    ratingModel.countStoreRatings(storeId),
+    ratingModel.findStoreRatingsPaginated({
+      storeId,
+      orderClause,
+      limit,
+      offset,
+    }),
+  ]);
+
+  const ratings = rows.map((r) => ({
+    id: r.id,
+    rating_value: r.rating_value,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+    user: {
+      id: r.user_id,
+      name: r.user_name,
+      email: r.user_email,
+      address: r.user_address,
+    },
+  }));
+
+  const pagination = buildPaginationMeta(total, meta.page, meta.limit);
+
+  return {
+    store: formatStore(storeRow),
+    ratings,
+    pagination,
+  };
+};
