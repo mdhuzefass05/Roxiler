@@ -1125,6 +1125,12 @@ h1, h2, h3, h4, h5, h6 {
   text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
 }
 
+.star-btn--hovered {
+  color: #fbbf24 !important; /* Amber 400 */
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.6) !important;
+  transform: scale(1.15);
+}
+
 .star-btn--empty {
   color: rgba(255, 255, 255, 0.2);
 }

@@ -155,6 +155,28 @@ const UserDashboard = () => {
         setFeedbackMsg(`Thank you! Your ${selectedScore}-star rating for "${selectedStore.name}" was submitted.`);
       }
 
+      // Optimistic update
+      setStores((prevStores) =>
+        prevStores.map((s) => {
+          if (s.id === selectedStore.id) {
+            const oldRating = s.user_rating;
+            const isNew = oldRating === null || oldRating === undefined;
+            const newTotalCount = isNew ? s.total_ratings + 1 : s.total_ratings;
+            const oldSum = (s.average_rating || 0) * (s.total_ratings || 0);
+            const newSum = isNew ? oldSum + selectedScore : oldSum - (oldRating || 0) + selectedScore;
+            const newAvg = newTotalCount > 0 ? parseFloat((newSum / newTotalCount).toFixed(2)) : selectedScore;
+
+            return {
+              ...s,
+              user_rating: selectedScore,
+              average_rating: newAvg,
+              total_ratings: newTotalCount,
+            };
+          }
+          return s;
+        })
+      );
+
       setIsRatingModalOpen(false);
       setTimeout(() => setFeedbackMsg(null), 5000);
       fetchStores();
