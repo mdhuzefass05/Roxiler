@@ -398,7 +398,7 @@ const UserDashboard = () => {
         </div>
 
         {/* Rating Score Chips & Favorites Checkbox */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.25rem', flexWrap: 'wrap', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.25rem', flexWrap: 'wrap', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-muted)' }}>Rating Filter:</span>
             {['all', '4.0', '4.5'].map((r) => {
@@ -480,7 +480,7 @@ const UserDashboard = () => {
                     {getCategoryIcon(s.category)} {s.category || 'General'}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="status-dot--open" style={{ background: 'rgba(255,255,255,0.9)', padding: '0.2rem 0.5rem', borderRadius: '10px' }}>
+                    <span className="status-dot--open" style={{ background: 'var(--color-banner-badge-bg)', padding: '0.2rem 0.5rem', borderRadius: '10px' }}>
                       Open Today
                     </span>
                   </div>
@@ -516,7 +516,7 @@ const UserDashboard = () => {
                             <span className="trust-badge trust-badge--top-rated">🏆 Top Rated</span>
                           )}
                           {isPopular && (
-                            <span className="trust-badge" style={{ background: '#fce7f3', color: '#9d174d' }}>🔥 Popular</span>
+                            <span className="trust-badge" style={{ background: 'rgba(219, 39, 119, 0.15)', color: 'var(--color-accent-pink)' }}>🔥 Popular</span>
                           )}
                         </div>
 
