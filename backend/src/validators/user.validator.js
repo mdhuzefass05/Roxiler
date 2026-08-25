@@ -1,4 +1,5 @@
 import { body, param, query } from 'express-validator';
+import { ALL_ROLES } from '../constants/index.js';
 
 /**
  * User validators — express-validator chains.
@@ -43,7 +44,7 @@ export const createUser = [
 
   body('role')
     .notEmpty().withMessage('Role is required.')
-    .isIn(['SYSTEM_ADMIN', 'NORMAL_USER', 'STORE_OWNER'])
+    .isIn(ALL_ROLES)
     .withMessage('Role must be one of: SYSTEM_ADMIN, NORMAL_USER, STORE_OWNER.'),
 ];
 
@@ -59,7 +60,7 @@ export const listUsers = [
   query('address').optional().isString().trim(),
   query('role')
     .optional()
-    .isIn(['SYSTEM_ADMIN', 'NORMAL_USER', 'STORE_OWNER'])
+    .isIn(ALL_ROLES)
     .withMessage('Invalid role filter.'),
   query('sort')
     .optional()
